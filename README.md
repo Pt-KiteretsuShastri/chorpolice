@@ -82,6 +82,8 @@ Steam, shop bulbs, laundry, falling leaves, birds, walkers and police cars anima
 
 Solo uses a clamped follow camera. Local two-player shares a camera that fits both actors. A screen-anchored minimap, overview toggle, numbered objectives and dotted route home support navigation. The whole map renders before Start.
 
+Rooftop access has a 96 px approach radius and checks clear sight to an amber ladder. You do not need to stand exactly on the marker. The nearby roof is outlined and a Space prompt appears; the touch button and sidebar show the same action. Once on a roof, Space can always return to the street. Away from the landing marker, face a nearby roof to leap instead. All prompts and jump input use one shared target resolver.
+
 ## Randomness and rematches
 
 - Twenty validated candidate locations are spread across five loot districts. Each round chooses three different districts, three distinct locations and three different loot personalities.
@@ -130,9 +132,9 @@ npm ci
 npm run test:dom
 ```
 
-LinkeDOM is a development-only dependency. It is not needed to serve or deploy `dist`. The DOM harness drives the actual page modules through a two-player lobby, join link, readiness, guest controls, pause/resume, rematch, disconnect/rejoin and return to solo using test data channels. It does not emulate browser layout or native WebRTC.
+LinkeDOM is a development-only dependency. It is not needed to serve or deploy `dist`. The DOM harness drives the actual page modules through a two-player lobby, join link, readiness, guest controls, pause/resume, rematch, disconnect/rejoin and return to solo using test data channels. It also drives the actual Space key handler to climb and the touch button to descend, checking their prompts. It does not emulate browser layout or native WebRTC.
 
-The **48 automated tests** cover all marked landmarks and courtyard gates, solid footprints, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, Hindi translation coverage, Hindi-only voice selection, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration. Online tests cover room IDs, handshake, admission, disconnect/rejoin, timeouts, version mismatch, heartbeat, input expiry, snapshots, interpolation and a complete round over paired test channels.
+The **52 automated tests** cover all marked landmarks and courtyard gates, solid footprints, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, walking approaches to all ten rooftops, generous climb range, safe descent from roof corners, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, Hindi translation coverage, Hindi-only voice selection, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration. Online tests cover room IDs, handshake, admission, disconnect/rejoin, timeouts, version mismatch, heartbeat, input expiry, snapshots, interpolation and a complete round over paired test channels.
 
 Complete AI chor victories are simulated over four seeds at each difficulty with patrol traffic enabled. Cop victories are simulated against an idle chor. Canvas rendering was also checked with a raster Canvas implementation at full-map, desktop and 360 px phone widths.
 

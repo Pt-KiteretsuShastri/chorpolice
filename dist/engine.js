@@ -1,5 +1,5 @@
 /** Deterministic simulation. Browser, speech, and drawing stay in other modules. */
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,NAV_TILE,SAFE,CHOR_SPAWN,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,moveGround,roofAt,findPath,pathDistance,lineOfSight,nearestGround,closedRoute} from './world.js';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,NAV_TILE,SAFE,CHOR_SPAWN,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,moveGround,roofAt,roofJumpTarget,findPath,pathDistance,lineOfSight,nearestGround,closedRoute} from './world.js';
 import {seedNumber,randomFrom,shuffled} from './random.js';
 import {LOOT_TYPES,DISTRACTIONS,LINES,SHARED_LINES,hindiLine,speakerName} from './dialogue.js';
 export {TILE,COLS,ROWS,WIDTH,HEIGHT,SAFE,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,ROOF_ACCESS,GRID,distance,walkable,findPath,lineOfSight,LOOT_TYPES};
@@ -36,6 +36,7 @@ export class Game{
     this.stats={noise:0,persuaded:0,jumps:0,teas:0};this.neighborIn=18;this.botPause=0;
     this.cars=CAR_WAYPOINTS.map((waypoints,i)=>{const route=closedRoute(waypoints),index=i?4:0;return {id:i,route,index,initialIndex:index,x:route[index].x,y:route[index].y,dir:Math.PI/2,aware:0,radioCooldown:0};});
   }
+  get jumpTarget(){return roofJumpTarget(this.chor);}
   get hidden(){return !!this.chor.seated;}
   get catchable(){return !this.hidden&&this.chor.layer==='ground'&&!this.chor.jump&&this.chor.invuln<=0;}
   start(){if(this.phase!=='ready')return;this.phase='playing';this.emit('start',this.online?'Online round started. Chor delivers; cop catches.':this.duo?'P1 is chor. P2 is cop. The gully is yours.':this.role==='chor'?'Convince three treasures, then bank them at the green safehouse.':'Tag the chor three times. Patrol cars are on your side.');this.say('neighbor',LINES.neighbor,{priority:1});}
@@ -84,7 +85,7 @@ export class Game{
     if(kind==='drop'&&this.carried){const l=this.carried,p=c.layer==='ground'?c:nearestGround(c);l.state='ground';l.x=p.x;l.y=p.y;l.trust=0;this.carried=null;this.negotiation=null;this.emit('drop',`${l.name} dropped on reachable ground.`);return;}
     if(kind!=='interact'||c.jump||c.stun>0)return;
     if(this.hidden){this.leaveTea();return;}
-    if(c.layer!=='ground'){this.emit('hint','Press Space at an amber rooftop marker to come down.');return;}
+    if(c.layer!=='ground'){this.emit('hint','Press Space to descend, or face a nearby roof to leap.');return;}
     const seat=TEA_SPOTS.find(p=>distance(c,p)<42);
     if(seat){c.x=seat.x;c.y=seat.y;c.seated=seat.id;c.seatTime=0;c.moving=false;c.sprinting=false;this.negotiation=null;this.alert=0;this.lastNoise=null;this.cop.state='patrol';this.cars.forEach(car=>car.aware=0);this.stats.teas++;this.say('chor',LINES.tea,{priority:3});this.emit('tea','Chai camouflage: invisible and untouchable while seated. E to leave. Time still runs.');return;}
     if(distance(c,SAFE)<SAFE.radius){
@@ -98,19 +99,9 @@ export class Game{
   jump(){
     const a=this.chor;if(a.jump||this.hidden||a.stun>0)return;
     if(a.jumpCooldown>0||a.energy<18){this.emit('hint','Need 18 energy and a ready jump.');return;}
-    let target=null,layer,roofId=null;
-    if(a.layer==='ground'){
-      const entry=ROOF_ACCESS.filter(p=>distance(a,p.ground)<48).sort((p,q)=>distance(a,p.ground)-distance(a,q.ground))[0];
-      if(entry){target=entry.roof;layer='roof';roofId=entry.buildingId;}
-    }else{
-      const entry=ROOF_ACCESS.find(p=>p.buildingId===a.roofId);
-      if(entry&&distance(a,entry.roof)<47){target=entry.ground;layer='ground';}
-      else{
-        const targets=BUILDINGS.filter(b=>b.climbable!==false&&b.id!==a.roofId).map(b=>({b,p:{x:clamp(a.x+Math.cos(a.dir)*80,b.x*TILE+16,(b.x+b.w)*TILE-16),y:clamp(a.y+Math.sin(a.dir)*80,b.y*TILE+16,(b.y+b.h)*TILE-16)}})).filter(({p})=>distance(a,p)<=122&&((p.x-a.x)*Math.cos(a.dir)+(p.y-a.y)*Math.sin(a.dir))>12).sort((p,q)=>distance(a,p.p)-distance(a,q.p));
-        if(targets.length){target=targets[0].p;layer='roof';roofId=targets[0].b.id;}
-      }
-    }
-    if(!target){this.emit('hint',a.layer==='roof'?'Move to an edge facing a nearby roof, or return to the amber exit.':'Find an amber ladder beside a shop. Space climbs to the roof.');return;}
+    const jump=this.jumpTarget;
+    if(!jump){this.emit('hint','Move closer to an amber ladder. The Space prompt appears when you can climb.');return;}
+    const {to:target,targetLayer:layer,roofId}=jump;
     a.energy-=18;a.jumpCooldown=1.1;a.jump={from:{x:a.x,y:a.y},to:{...target},fromLayer:a.layer,targetLayer:layer,roofId,t:0,duration:.44};a.layer='air';this.negotiation=null;this.stats.jumps++;if(this.carried)this.carried.trust=Math.max(0,this.carried.trust-.08);this.emit('jump',layer==='roof'?'Up on the rooftops. Ground patrols cannot tag you here.':'Back on the street.');
   }
   throwNet(){
@@ -215,13 +206,13 @@ export class Game{
   }
   hint(){
     if(this.hidden)return 'Tea camouflage · invisible and safe. E to leave. The clock keeps running.';
-    if(this.chor.layer==='roof')return 'Rooftop route · Space at an amber exit to descend, or face a nearby roof to leap.';
+    if(this.chor.layer==='roof')return this.jumpTarget?.kind==='leap'?'Space · Leap to the next rooftop':'Space · Down to the street. Face a nearby roof to leap instead.';
     if(this.role==='cop'&&!this.duo)return this.netCooldown>0?`Net recharging · ${Math.ceil(this.netCooldown)}s`:'Follow the noise. Space nets. Rooftops and seated chai drinkers are protected.';
     if(this.carried&&distance(this.chor,SAFE)<SAFE.radius)return 'E · Bank your loot';
     if(TEA_SPOTS.some(p=>distance(p,this.chor)<42))return 'E · Sit for chai and disappear';
+    if(this.jumpTarget)return this.chor.energy<18?'Rooftop nearby · recover 18 energy to climb':'Space · Climb this rooftop. You do not need to stand exactly on the ladder.';
     if(this.carried)return `${this.carried.name} · ${this.carried.trust<.35?'F · Make a new offer before it shouts':'Follow the dotted trail home'}`;
     const l=this.loot.find(l=>l.state==='ground'&&distance(l,this.chor)<70);if(l)return `${l.name} wants ${l.desire}. E · Make an offer`;
-    if(ROOF_ACCESS.some(p=>distance(p.ground,this.chor)<48))return 'Space · Jump onto this rooftop';
     return 'Find a numbered treasure. E opens a conversation. Make it the right offer.';
   }
 }

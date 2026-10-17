@@ -59,6 +59,9 @@ function pause(force=false){
 function action(kind){if(network&&!network.isHost){if(kind==='net')network.send('action',{round,seq:++actionSequence,action:'net'});}else game.action(kind);focusGame();}
 function answer(index){if(!network||network.isHost)game.answer(index);focusGame();}
 function updateHud(){
+  const jump=game.jumpTarget,canJump=game.chor.energy>=18&&game.chor.jumpCooldown<=0;
+  $('touch-jump').textContent=jump?(jump.kind==='climb'?'Climb roof':jump.kind==='leap'?'Leap roof':'Down to street'):'Jump';
+  $('rooftop-status').textContent=role==='cop'&&!duo?'Rooftops protect the chor. Watch the amber exits.':game.chor.jump?'Jumping…':jump?!canJump?(game.chor.energy<18?'Recover 18 energy to jump.':'Jump recharging…'):jump.kind==='climb'?'Ready · Space to climb this roof':jump.kind==='leap'?'Ready · Space to leap to the next roof':'Space to return to the street':'Walk near an amber ladder, then press Space. On a roof, Space returns to the street or leaps to a nearby roof.';
   $('mode-label').textContent=network?`ONLINE ${role.toUpperCase()} · ${network.connected?'CONNECTED':'WAITING'}`:game.phase==='ready'?'THE GULLY IS OPEN':duo?'P1 CHOR · P2 COP':`SOLO ${role.toUpperCase()}`;
   $('clock').textContent=fmt(Math.ceil(game.remaining));$('clock').style.color=game.remaining<=20?'#a04f32':'';
   $('score').textContent=`${game.banked} / 3`;$('lives').textContent=Array.from({length:3},(_,i)=>i<3-game.catches?'●':'○').join(' ');$('lives').setAttribute('aria-label',`${3-game.catches} chor chances remaining`);

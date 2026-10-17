@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,TILE,GRID,SAFE,ROOF_ACCESS,TEA_SPOTS,ART_URL,CIVILIAN_ROUTES,distance,findPath,nearestGround,closedRoute} from './world.js';
+import {WIDTH,HEIGHT,TILE,GRID,SAFE,BUILDINGS,ROOF_ACCESS,TEA_SPOTS,ART_URL,CIVILIAN_ROUTES,distance,findPath,nearestGround,closedRoute} from './world.js';
 import {Camera} from './camera.js';
 import {paintNeighbourhood,paintAmbient,drawPasserby} from './world-art.js';
 
@@ -90,7 +90,18 @@ export class Renderer{
     for(let i=0;i<this.civilians.length;i++){
       const route=this.civilians[i];if(!route.length)continue;const step=(t*.6+i*9)%route.length,j=Math.floor(step),f=step-j,a=route[j],b=route[(j+1)%route.length];drawPasserby(c,a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,t,i);
     }
-    for(const a of ROOF_ACCESS){const pulse=.9+Math.sin(t*3)*.1;circle(c,a.ground.x,a.ground.y,11*pulse,'#f6d47a');circle(c,a.ground.x,a.ground.y,8,'#a46e37');line(c,a.ground.x-3,a.ground.y-5,a.ground.x-3,a.ground.y+5,'#fff0c1',1.5);line(c,a.ground.x+3,a.ground.y-5,a.ground.x+3,a.ground.y+5,'#fff0c1',1.5);for(let i=-3;i<5;i+=3)line(c,a.ground.x-3,a.ground.y+i,a.ground.x+3,a.ground.y+i,'#fff0c1',1.2);circle(c,a.roof.x,a.roof.y,8,'#efc66388');}
+    const showRoofHelp=g.role==='chor'||(g.duo&&!g.online),jumpHelp=showRoofHelp?g.jumpTarget:null;let jumpLabel=null;
+    for(const a of ROOF_ACCESS){const active=jumpHelp?.entry===a,pulse=.9+Math.sin(t*3)*.1;
+      circle(c,a.ground.x,a.ground.y,(active?19:14)*pulse,'#f6d47a');circle(c,a.ground.x,a.ground.y,10,'#845428');text(c,'↑',a.ground.x,a.ground.y,17,'#fff5d1');
+      if(showRoofHelp){box(c,a.ground.x-24,a.ground.y+17,48,15,'#3b503e',4);text(c,'SPACE',a.ground.x,a.ground.y+25,9,'#fff5d1');}
+      circle(c,a.roof.x,a.roof.y,9,'#efc663aa');
+    }
+    if(jumpHelp&&g.phase==='playing'){
+      const ready=g.chor.energy>=18&&g.chor.jumpCooldown<=0,b=BUILDINGS.find(b=>b.id===jumpHelp.roofId);
+      if(b){c.save();c.strokeStyle=ready?'#ffdf81':'#d3bc91';c.lineWidth=3;c.setLineDash([7,5]);c.strokeRect(b.x*TILE,b.y*TILE,b.w*TILE,b.h*TILE);c.restore();}
+      c.save();c.setLineDash([4,5]);line(c,g.chor.x,g.chor.y,jumpHelp.to.x,jumpHelp.to.y,'#ffdd88bb',2);c.restore();
+      jumpLabel=!ready?(g.chor.energy<18?'Need 18 energy':'Jump recharging'):jumpHelp.kind==='climb'?'SPACE · CLIMB ROOF':jumpHelp.kind==='leap'?'SPACE · LEAP ROOF':'SPACE · DOWN TO STREET';
+    }
     if(g.carried&&(g.role==='chor'||(g.duo&&!g.online))){
       const start=g.chor.layer==='ground'?g.chor:ROOF_ACCESS.find(a=>a.buildingId===g.chor.roofId)?.ground||nearestGround(g.chor);
       const key=`${Math.floor(start.x/TILE)},${Math.floor(start.y/TILE)}`;if(this.homeRoute.key!==key)this.homeRoute={key,points:findPath(start,SAFE)};
@@ -112,6 +123,7 @@ export class Renderer{
     if(g.netVisual>0){c.save();c.translate(g.cop.x,g.cop.y);c.rotate(g.cop.dir);c.strokeStyle='#506c54aa';c.lineWidth=2;for(let i=-30;i<=30;i+=10){line(c,20,i,85,i*.4,'#506c54aa',1);line(c,25+i*.4,-29,25+i*.4,29,'#506c54aa',1);}c.restore();}
     for(const p of g.particles){c.globalAlpha=Math.max(0,p.life);circle(c,p.x,p.y,2.5,p.color);}c.globalAlpha=1;
     c.setTransform(d,0,0,d,0,0);
+    if(jumpLabel){const p=cam.project(g.chor,w),bw=Math.min(226,w-24),bx=Math.max(12,Math.min(w-bw-12,p.x-bw/2)),by=Math.max(12,Math.min(h-42,p.y-66));box(c,bx,by,bw,30,'#283f33',6);text(c,jumpLabel,bx+bw/2,by+15,12,'#fff0ba');}
     // Bubbles are screen-sized so dialogue stays legible while zoomed out.
     for(const bubble of g.speech.slice(-2)){
       const who=bubble.who,a=bubble.anchor||(who==='chor'?g.chor:who==='cop'?g.cop:g.loot.find(l=>l.id===who)||{x:336,y:560});

@@ -45,3 +45,7 @@ test('painted road patches exactly share the geometry transform without missing 
   for(const [im,sx,sy,sw,sh,dx,dy,dw,dh]of calls){assert.equal(im,image);const a=P(sx,sy),b=P(sx+sw,sy+sh);assert.deepEqual([dx,dy,dw,dh],[a.x,a.y,b.x-a.x,b.y-a.y]);assert.ok(dw>0&&dh>0);area+=dw*dh;}
   assert.ok(Math.abs(area-WIDTH*HEIGHT)<.01,'Road patches leave gaps or overlap');
 });
+
+test('available roof access has a visible Space prompt and highlighted landing',()=>{
+  const labels=[],rects=[],ctx=new Proxy({measureText:t=>({width:String(t).length*6}),fillText:(t)=>labels.push(t),strokeRect:(...args)=>rects.push(args)},{get:(o,k)=>k in o?o[k]:()=>{},set:(o,k,v)=>(o[k]=v,true)}),canvas=()=>({getContext:()=>ctx}),r=new Renderer(canvas(),canvas),g=new Game({seed:42});g.start();Object.assign(g.chor,ROOF_ACCESS[0].ground);r.resize(360,470);r.render(g,0);assert.ok(labels.includes('SPACE · CLIMB ROOF'));assert.ok(rects.length>0);g.chor.energy=10;r.render(g,0);assert.ok(labels.includes('Need 18 energy'));
+});

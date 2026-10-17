@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {Game,SAFE,STATION,walkable,findPath,lineOfSight,distance,TEA_SPOTS,ROOF_ACCESS,LOOT_TYPES} from '../dist/engine.js';
-import {roofAt,BUILDINGS,P,CHOR_SPAWN} from '../dist/world.js';
+import {roofAt,roofJumpTarget,BUILDINGS,P,CHOR_SPAWN} from '../dist/world.js';
 import {movement,actionFor} from '../dist/input.js';
 
 function tick(g,seconds,input={}){for(let i=0;i<Math.ceil(seconds*60);i++)g.update(1/60,input);}
@@ -51,6 +51,23 @@ test('sprint consumes energy and chai restores it',()=>{
 });
 test('rooftop jumps climb, cross a gap, collide with roof edges and descend',()=>{
   const g=fresh(),access=ROOF_ACCESS.find(a=>a.buildingId==='bazaar-west');position(g.chor,access.ground);g.action('jump');assert.equal(g.chor.layer,'air');assert.equal(g.chor.energy,82);tick(g,.5);assert.equal(g.chor.layer,'roof');assert.equal(g.chor.roofId,'bazaar-west');assert.ok(roofAt(g.chor.x,g.chor.y));tick(g,1.2,{chor:{x:1}});const b=BUILDINGS.find(b=>b.id==='bazaar-west');assert.ok(g.chor.x<=32*(b.x+b.w)-13);g.action('jump');tick(g,.5);assert.equal(g.chor.roofId,'bazaar-east');assert.equal(g.chor.layer,'roof');const exit=ROOF_ACCESS.find(a=>a.buildingId==='bazaar-east');position(g.chor,exit.roof);tick(g,.7);g.action('jump');tick(g,.5);assert.equal(g.chor.layer,'ground');assert.ok(walkable(g.chor.x,g.chor.y));assert.equal(g.stats.jumps,3);
+});
+test('every rooftop can be reached by walking and climbed without standing exactly on its marker',()=>{
+  for(const access of ROOF_ACCESS){
+    const g=fresh();let approach;
+    for(let i=0;i<24;i++){const angle=i*Math.PI/12,p={x:access.ground.x+Math.cos(angle)*76,y:access.ground.y+Math.sin(angle)*76,layer:'ground'};if(walkable(p.x,p.y,12)&&roofJumpTarget(p)?.entry===access&&findPath(SAFE,p).length){approach=p;break;}}
+    assert.ok(approach,`No generous approach for ${access.buildingId}`);let frames=0;
+    for(const p of [...findPath(g.chor,approach),approach]){while(distance(g.chor,p)>.5&&frames++<12000){g.move(g.chor,p.x-g.chor.x,p.y-g.chor.y,false,1/60,Math.min(178,distance(g.chor,p)*60));assert.ok(walkable(g.chor.x,g.chor.y));}}
+    assert.ok(distance(g.chor,approach)<1,`Walk got stuck: ${access.buildingId}`);assert.ok(distance(g.chor,access.ground)>60,'Only tested exact marker');assert.equal(g.jumpTarget?.entry,access);assert.match(g.hint(),/Space/);
+    g.action('jump');assert.equal(g.chor.layer,'air');tick(g,.5);assert.equal(g.chor.layer,'roof');assert.equal(g.chor.roofId,access.buildingId);assert.equal(roofAt(g.chor.x,g.chor.y)?.id,access.buildingId);
+    tick(g,.7);assert.equal(g.jumpTarget?.kind,'descend');g.action('jump');tick(g,.5);assert.equal(g.chor.layer,'ground');assert.ok(walkable(g.chor.x,g.chor.y));
+  }
+});
+test('a chor away from a roof landing can always descend safely',()=>{
+  const g=fresh(),access=ROOF_ACCESS[0],b=BUILDINGS.find(b=>b.id===access.buildingId);Object.assign(g.chor,{layer:'roof',roofId:b.id,x:b.x*32+14,y:b.y*32+14,dir:Math.PI});assert.ok(distance(g.chor,access.roof)>40);assert.equal(g.jumpTarget.kind,'descend');g.action('jump');tick(g,.5);assert.equal(g.chor.layer,'ground');assert.ok(walkable(g.chor.x,g.chor.y));
+});
+test('climb hints and actions agree, with energy, stun and tea protection respected',()=>{
+  const g=fresh();assert.equal(g.jumpTarget,null);g.action('jump');assert.equal(g.chor.jump,null);position(g.chor,ROOF_ACCESS[0].ground);assert.equal(g.jumpTarget.kind,'climb');g.chor.energy=17;g.action('jump');assert.equal(g.chor.jump,null);assert.equal(g.chor.energy,17);g.chor.energy=100;g.chor.stun=1;assert.equal(g.jumpTarget,null);g.chor.stun=0;g.chor.seated='west-seat';assert.equal(g.jumpTarget,null);g.chor.seated=null;g.action('jump');assert.ok(g.chor.jump);assert.equal(g.jumpTarget,null);
 });
 test('roof loot drops onto reachable ground and nets cannot catch a rooftop chor',()=>{
   const g=fresh();pick(g);const a=ROOF_ACCESS[0];position(g.chor,a.ground);g.action('jump');tick(g,.5);position(g.cop,g.chor);g.action('net');assert.equal(g.chor.stun,0);assert.equal(g.tag(),false);g.action('drop');const l=g.loot.find(l=>l.state==='ground'&&l.trust===0&&l.x!==l.origin.x);assert.ok(l);assert.ok(walkable(l.x,l.y));assert.ok(findPath(SAFE,l).length);

@@ -124,6 +124,25 @@ export function buildGrid(){return Array.from({length:ROWS},(_,y)=>Array.from({l
 export const GRID=buildGrid();
 export function roofAt(x,y,r=10){return BUILDINGS.find(b=>b.climbable!==false&&x-r>=b.x*TILE+3&&x+r<=(b.x+b.w)*TILE-3&&y-r>=b.y*TILE+3&&y+r<=(b.y+b.h)*TILE-3);}
 export function roofTarget(a,b,forward=80){return{x:clamp(a.x+Math.cos(a.dir)*forward,b.x*TILE+16,(b.x+b.w)*TILE-16),y:clamp(a.y+Math.sin(a.dir)*forward,b.y*TILE+16,(b.y+b.h)*TILE-16)};}
+/** One target resolver drives jump input, world prompts and touch labels. */
+export const CLIMB_REACH=96;
+export function roofJumpTarget(a){
+  if(a.seated||a.jump||a.stun>0)return null;
+  if(a.layer==='ground'){
+    const entry=ROOF_ACCESS.filter(p=>distance(a,p.ground)<=CLIMB_REACH&&lineOfSight(a,p.ground)&&roofAt(p.roof.x,p.roof.y)?.id===p.buildingId).sort((p,q)=>distance(a,p.ground)-distance(a,q.ground))[0];
+    return entry?{kind:'climb',entry,to:entry.roof,targetLayer:'roof',roofId:entry.buildingId}:null;
+  }
+  if(a.layer!=='roof')return null;
+  const entry=ROOF_ACCESS.find(p=>p.buildingId===a.roofId);
+  if(!entry)return null;
+  // Close to the landing marker means down. Else face a nearby roof to leap;
+  // Space always has a safe descent fallback, even far from the landing spot.
+  if(distance(a,entry.roof)>40){
+    const targets=BUILDINGS.filter(b=>b.climbable!==false&&b.id!==a.roofId).map(b=>({b,p:{x:clamp(a.x+Math.cos(a.dir)*80,b.x*TILE+16,(b.x+b.w)*TILE-16),y:clamp(a.y+Math.sin(a.dir)*80,b.y*TILE+16,(b.y+b.h)*TILE-16)}})).filter(({b,p})=>distance(a,p)<=140&&roofAt(p.x,p.y)?.id===b.id&&((p.x-a.x)*Math.cos(a.dir)+(p.y-a.y)*Math.sin(a.dir))>12).sort((p,q)=>distance(a,p.p)-distance(a,q.p));
+    if(targets.length)return{kind:'leap',entry,to:targets[0].p,targetLayer:'roof',roofId:targets[0].b.id};
+  }
+  return walkable(entry.ground.x,entry.ground.y)?{kind:'descend',entry,to:entry.ground,targetLayer:'ground',roofId:null}:null;
+}
 export function lineOfSight(a,b){const n=Math.ceil(distance(a,b)/8);for(let i=1;i<n;i++){const f=i/n;if(!walkable(a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,0))return false;}return true;}
 function edgeClear(a,b){for(let i=1;i<4;i++)if(!walkable(a.x+(b.x-a.x)*i/4,a.y+(b.y-a.y)*i/4,11))return false;return true;}
 export const NAV_TILE=8,NAV_COLS=WIDTH/NAV_TILE,NAV_ROWS=HEIGHT/NAV_TILE;
