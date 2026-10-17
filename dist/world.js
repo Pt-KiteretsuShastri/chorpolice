@@ -1,92 +1,118 @@
-/** One geometry source for illustration, physics, rooftop access and navigation. */
-export const TILE=32,COLS=40,ROWS=26,WIDTH=COLS*TILE,HEIGHT=ROWS*TILE;
-export const SAFE={x:80,y:752,radius:50};
-export const STATION={x:1168,y:208};
-export const ROADS=[{x:9,y:1,w:3,h:24},{x:24,y:1,w:3,h:24},{x:1,y:7,w:38,h:3},{x:1,y:16,w:38,h:3}];
-export const PARK={x:28,y:10,w:5,h:6};
+/** Authored over the supplied 1536 × 1024 illustration; all coordinates scale to 1280 × 832.
+ * Ground polygons, terraces and gates are gameplay geometry, never inferred from image colours.
+ */
+export const TILE=32,COLS=40,ROWS=26,WIDTH=1280,HEIGHT=832;
+export const MAP_VERSION='painted-gully-1';
+export const ART_URL=new URL('./assets/neighbourhood.webp',import.meta.url).href;
+export const P=(x,y)=>({x:x*WIDTH/1536,y:y*HEIGHT/1024});
+const polygon=points=>points.map(([x,y])=>P(x,y));
+const block=(id,kind,points)=>({id,kind,polygon:polygon(points)});
+const rectangle=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
+const terrace=(id,name,x,y,w,h,kind='home')=>({id,name,kind,x:x/1536*COLS,y:y/1024*ROWS,w:w/1536*COLS,h:h/1024*ROWS});
+export const SAFE={...P(288,916),radius:40};
+export const CHOR_SPAWN=P(288,885);
+export const STATION=P(1415,254);
 export const BUILDINGS=[
-  {id:'kitchen',x:3,y:3,w:5,h:3,roof:'#bc7659',wall:'#e8bb88',name:'SEETI KITCHEN',kind:'kitchen'},
-  {id:'library',x:13,y:3,w:5,h:3,roof:'#75917b',wall:'#d7d0a6',name:'GULLY LIBRARY',kind:'library'},
-  {id:'samosa',x:19,y:3,w:4,h:4,roof:'#c69849',wall:'#ebcd89',name:'SAMOSA CORNER',kind:'samosa'},
-  {id:'radio',x:28,y:3,w:4,h:3,roof:'#b07872',wall:'#dab2a0',name:'BOL BACHCHAN RADIO',kind:'radio'},
-  {id:'police',x:33,y:2,w:5,h:3,roof:'#487d8d',wall:'#adc9c8',name:'POLICE CHOWKI',kind:'police',climbable:false},
-  {id:'general',x:3,y:11,w:5,h:4,roof:'#67968a',wall:'#b8cfb6',name:'GUPTA GENERAL',kind:'shop'},
-  {id:'drama',x:14,y:11,w:7,h:4,roof:'#b17676',wall:'#e0b797',name:'GULLY DRAMA CLUB',kind:'drama'},
-  {id:'cycle',x:35,y:11,w:3,h:4,roof:'#70939b',wall:'#bdd1c6',name:'CYCLE REPAIR',kind:'cycle'},
-  {id:'chai',x:12,y:21,w:5,h:3,roof:'#aa8450',wall:'#dfbc80',name:'CHAI & GOSSIP',kind:'chai'},
-  {id:'sharma',x:20,y:21,w:5,h:3,roof:'#b09c7e',wall:'#dcc7a0',name:'SHARMA NIWAS',kind:'home'},
-  {id:'textile',x:28,y:21,w:4,h:3,roof:'#7c9a90',wall:'#c8d5b5',name:'RANGREZ TEXTILES',kind:'textile'},
-  {id:'mehta',x:34,y:21,w:4,h:3,roof:'#c48d61',wall:'#e6c291',name:'MEHTA NIWAS',kind:'home'}
+  terrace('bazaar-west','BAZAAR TERRACE',152,48,124,77,'shop'),
+  terrace('bazaar-east','BAZAAR ROOFS',330,18,146,84,'kitchen'),
+  terrace('bazaar-radio','RADIO TERRACE',669,45,141,67,'radio'),
+  terrace('west-home','GULLY HOME',224,354,151,72),
+  terrace('central-home','CENTRAL TERRACE',676,365,122,91),
+  terrace('central-west','TANK TERRACE',560,465,110,80),
+  terrace('chai','CHAI ROOF',570,726,150,61,'chai'),
+  terrace('radio-home','RADIO HOME',812,748,124,101),
+  terrace('east-home','EAST TERRACE',1288,673,182,108),
+  terrace('lower-home','SOLAR TERRACE',1112,797,106,92),
+  terrace('police','POLICE CHOWKI',1280,22,208,89,'police')
+];
+BUILDINGS.find(b=>b.id==='police').climbable=false;
+// Building footprints include façades. Courtyard walls have deliberate openings.
+export const GROUND_OBSTACLES=[
+  block('bazaar','building',[[116,0],[838,0],[847,150],[828,233],[727,268],[539,294],[346,284],[201,265],[124,223]]),
+  block('north-garden','garden',[[969,0],[1254,0],[1238,145],[1189,235],[1110,249],[986,185]]),
+  block('police-building','building',[[1243,0],[1536,0],[1536,192],[1455,221],[1302,211],[1232,177]]),
+  block('far-west','building',[[0,93],[69,116],[91,234],[43,274],[0,254]]),
+  block('west-edge-home','building',[[0,355],[91,355],[102,492],[179,537],[160,581],[0,541]]),
+  block('west-home','building',[[203,335],[309,311],[428,368],[435,520],[380,550],[205,530],[182,450]]),
+  block('central-home','building',[[560,351],[794,327],[817,455],[821,544],[786,648],[547,630],[520,547],[530,443]]),
+  block('east-edge-home','building',[[1392,411],[1536,424],[1536,611],[1452,638],[1383,567]]),
+  block('safe-roof','building',[[172,702],[439,652],[463,821],[430,855],[198,848]]),
+  block('safe-garden','garden',[[0,546],[170,567],[209,635],[184,827],[0,897]]),
+  block('safe-west-wall','wall',rectangle(197,818,35,163)),
+  block('safe-east-wall','wall',[[420,820],[454,813],[458,944],[426,978],[413,939]]),
+  block('safe-front-left','wall',rectangle(224,932,34,42)),
+  block('safe-front-right','wall',[[320,937],[419,948],[414,987],[315,971]]),
+  block('chai','building',[[555,714],[757,714],[789,846],[754,909],[559,914],[539,843]]),
+  block('southern-homes','building',[[833,711],[941,669],[1027,678],[1120,700],[1228,648],[1394,624],[1536,640],[1536,1024],[838,1024],[781,973],[788,873]]),
+  block('park-north-wall','wall',[[921,267],[1295,338],[1300,374],[938,302]]),
+  block('park-west-wall','wall',[[917,290],[949,305],[956,516],[1007,549],[993,580],[925,544]]),
+  block('park-east-wall','wall',[[1290,365],[1323,374],[1343,565],[1312,577]]),
+  block('park-south-west-wall','wall',[[992,546],[1172,603],[1169,638],[982,579]]),
+  block('park-south-east-wall','wall',[[1250,604],[1338,561],[1344,598],[1261,642]])
 ];
 export const SOLID_PROPS=[
-  {x:13,y:6,w:2,h:1,kind:'cart'},
-  {x:38,y:12,w:1,h:2,kind:'auto'},
-  {x:29,y:12,w:2,h:2,kind:'banyan'},
-  {x:1,y:10,w:1,h:1,kind:'tree'},
-  {x:7,y:1,w:1,h:1,kind:'tree'},
-  {x:22,y:10,w:1,h:1,kind:'tree'},
-  {x:33,y:24,w:1,h:1,kind:'tree'},
-  {x:5,y:24,w:1,h:1,kind:'tree'},
-  {x:32,y:11,w:1,h:1,kind:'scooter'}
+  block('banyan','banyan',[[1002,393],[1120,394],[1150,500],[1080,542],[1007,497]]),
+  block('red-scooter','scooter',[[796,549],[849,542],[865,577],[808,590]]),
+  block('blue-scooter','scooter',[[782,606],[826,599],[858,649],[814,663]]),
+  block('fruit-cart','cart',rectangle(449,229,70,43)),
+  block('west-tree','tree',[[0,281],[57,277],[81,320],[49,358],[0,350]])
 ];
-export const BUSHES=[{x:256,y:332,w:48,h:30},{x:704,y:464,w:58,h:31},{x:1072,y:332,w:45,h:32},{x:192,y:656,w:64,h:31}];
-export const TEA_SPOTS=[{id:'west-seat',x:368,y:720},{id:'east-seat',x:560,y:752}];
-export const CHAI_SPOTS=[{x:336,y:560},{x:816,y:304},{x:1104,y:592}];
-const point=(x,y,district)=>({x:(x+.5)*TILE,y:(y+.5)*TILE,district});
+export const BUSHES=[{...P(856,358),w:22,h:32},{...P(1174,475),w:35,h:28},{...P(477,749),w:27,h:31}];
+export const TEA_SPOTS=[{id:'west-seat',...P(583,948)},{id:'east-seat',...P(710,964)}];
+export const CHAI_SPOTS=[P(471,682),P(893,325),P(1368,606)];
+const slot=(x,y,district)=>({...P(x,y),district});
 export const SPAWN_CANDIDATES=[
-  point(5,6,'bazaar'),point(15,7,'bazaar'),point(21,8,'bazaar'),point(12,10,'bazaar'),
-  point(28,6,'radio'),point(31,8,'radio'),point(34,9,'radio'),point(37,7,'radio'),
-  point(27,12,'park'),point(32,14,'park'),point(34,15,'park'),point(33,11,'park'),
-  point(13,15,'theatre'),point(20,15,'theatre'),point(22,11,'theatre'),point(8,13,'theatre'),
-  point(18,20,'homes'),point(27,22,'homes'),point(32,24,'homes'),point(8,20,'homes')
+  slot(322,300,'bazaar'),slot(365,318,'bazaar'),slot(610,323,'bazaar'),slot(760,287,'bazaar'),
+  slot(889,125,'chowk'),slot(909,230,'chowk'),slot(1128,280,'chowk'),slot(1300,302,'chowk'),
+  slot(1241,536,'park'),slot(1213,581,'park'),slot(1161,557,'park'),slot(982,424,'park'),
+  slot(300,594,'gullies'),slot(455,459,'gullies'),slot(475,568,'gullies'),slot(863,498,'gullies'),
+  slot(888,652,'homes'),slot(1018,638,'homes'),slot(740,686,'homes'),slot(503,883,'homes')
 ];
-export const PATROL=[point(36,8),point(25,8),point(10,8),point(10,17),point(3,20),point(10,17),point(25,17),point(36,17),STATION];
+export const ROOF_ACCESS=[
+  ['bazaar-west',P(322,300),P(201,102)],['bazaar-east',P(385,321),P(400,77)],['bazaar-radio',P(752,296),P(730,85)],
+  ['west-home',P(318,581),P(297,395)],['central-home',P(854,432),P(749,425)],['central-west',P(503,519),P(611,510)],
+  ['chai',P(525,811),P(609,762)],['radio-home',P(799,704),P(855,816)],['east-home',P(1397,606),P(1393,746)],['lower-home',P(1061,665),P(1164,848)]
+].map(([buildingId,ground,roof])=>({buildingId,ground,roof}));
+export const PATROL=[STATION,P(1178,295),P(893,285),P(542,340),P(481,540),P(487,695),P(482,950),P(289,1000),P(483,954),P(878,666),P(1368,606),P(1369,388)];
 export const CAR_WAYPOINTS=[
-  [STATION,point(36,8),point(25,8),point(10,8),point(10,17),point(25,17),point(36,17)],
-  [point(34,6),point(25,8),point(25,17),point(10,17),point(10,8),point(36,8)]
+  [STATION,P(1167,293),P(886,278),P(536,355),P(477,578),P(486,690),P(878,666),P(1368,606),P(1381,383)],
+  [P(1275,293),P(896,285),P(874,466),P(885,670),P(486,699),P(479,951),P(485,704),P(878,666),P(1368,606),P(1381,385)]
 ];
-export const ROOF_ACCESS=BUILDINGS.filter(b=>b.climbable!==false).map(b=>({
-  buildingId:b.id,
-  ground:{x:(b.x+Math.floor(b.w/2)+.5)*TILE,y:(b.y+b.h+.5)*TILE},
-  roof:{x:(b.x+Math.floor(b.w/2)+.5)*TILE,y:(b.y+b.h-.5)*TILE}
-}));
+export const CIVILIAN_ROUTES=[[P(201,293),P(418,332)],[P(456,408),P(475,626)],[P(1185,565),P(1275,526)],[P(487,725),P(483,958)]];
 export const distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 export const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
-export function buildGrid(){
-  const grid=Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>x===0||y===0||x===COLS-1||y===ROWS-1?1:0));
-  for(const b of [...BUILDINGS,...SOLID_PROPS])for(let y=b.y;y<b.y+b.h;y++)for(let x=b.x;x<b.x+b.w;x++)grid[y][x]=1;
-  return grid;
-}
-export const GRID=buildGrid();
+export function pointInPolygon(x,y,points){let inside=false;for(let i=0,j=points.length-1;i<points.length;j=i++){const a=points[i],b=points[j];if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside;}
+function edgeDistance(x,y,a,b){const dx=b.x-a.x,dy=b.y-a.y,t=clamp(((x-a.x)*dx+(y-a.y)*dy)/(dx*dx+dy*dy||1),0,1);return Math.hypot(x-a.x-t*dx,y-a.y-t*dy);}
+const SOLIDS=[...GROUND_OBSTACLES,...SOLID_PROPS].map(b=>({...b,minX:Math.min(...b.polygon.map(p=>p.x)),maxX:Math.max(...b.polygon.map(p=>p.x)),minY:Math.min(...b.polygon.map(p=>p.y)),maxY:Math.max(...b.polygon.map(p=>p.y))}));
 export function walkable(x,y,r=10){
-  if(!Number.isFinite(x)||!Number.isFinite(y))return false;
-  for(const [dx,dy]of [[-r,-r],[r,-r],[-r,r],[r,r]])if(GRID[Math.floor((y+dy)/TILE)]?.[Math.floor((x+dx)/TILE)]!==0)return false;
+  if(!Number.isFinite(x)||!Number.isFinite(y)||x-r<0||y-r<0||x+r>WIDTH||y+r>HEIGHT)return false;
+  for(const b of SOLIDS){if(x+r<b.minX||x-r>b.maxX||y+r<b.minY||y-r>b.maxY)continue;const p=b.polygon;if(pointInPolygon(x,y,p))return false;for(let i=0;i<p.length;i++)if(edgeDistance(x,y,p[i],p[(i+1)%p.length])<r)return false;}
   return true;
 }
+export function buildGrid(){return Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>walkable((x+.5)*TILE,(y+.5)*TILE,12)?0:1));}
+export const GRID=buildGrid();
 export function roofAt(x,y,r=10){return BUILDINGS.find(b=>b.climbable!==false&&x-r>=b.x*TILE+3&&x+r<=(b.x+b.w)*TILE-3&&y-r>=b.y*TILE+3&&y+r<=(b.y+b.h)*TILE-3);}
+export function roofTarget(a,b,forward=80){return{x:clamp(a.x+Math.cos(a.dir)*forward,b.x*TILE+16,(b.x+b.w)*TILE-16),y:clamp(a.y+Math.sin(a.dir)*forward,b.y*TILE+16,(b.y+b.h)*TILE-16)};}
+export function lineOfSight(a,b){const n=Math.ceil(distance(a,b)/8);for(let i=1;i<n;i++){const f=i/n;if(!walkable(a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,0))return false;}return true;}
+function edgeClear(a,b){for(let i=1;i<4;i++)if(!walkable(a.x+(b.x-a.x)*i/4,a.y+(b.y-a.y)*i/4,11))return false;return true;}
+export const NAV_TILE=8,NAV_COLS=WIDTH/NAV_TILE,NAV_ROWS=HEIGHT/NAV_TILE;
+const navPoint=(x,y)=>({x:(x+.5)*NAV_TILE,y:(y+.5)*NAV_TILE});
+export const NAV_GRID=Array.from({length:NAV_ROWS},(_,y)=>Array.from({length:NAV_COLS},(_,x)=>walkable((x+.5)*NAV_TILE,(y+.5)*NAV_TILE,11)?0:1));
+const EDGES=new Map();
+function neighbors(k){if(EDGES.has(k))return EDGES.get(k);const x=k%NAV_COLS,y=Math.floor(k/NAV_COLS),a=navPoint(x,y),out=[];for(const [dx,dy]of [[1,0],[0,1],[-1,0],[0,-1],[1,1],[-1,1],[-1,-1],[1,-1]]){const xx=x+dx,yy=y+dy;if(NAV_GRID[yy]?.[xx]===0&&edgeClear(a,navPoint(xx,yy)))out.push(yy*NAV_COLS+xx);}EDGES.set(k,out);return out;}
+function nearestNode(p){const cell={x:Math.floor(p.x/NAV_TILE),y:Math.floor(p.y/NAV_TILE)};if(NAV_GRID[cell.y]?.[cell.x]===0&&edgeClear(p,navPoint(cell.x,cell.y)))return cell;let best=null,bestD=40;for(let y=Math.max(0,cell.y-3);y<=Math.min(NAV_ROWS-1,cell.y+3);y++)for(let x=Math.max(0,cell.x-3);x<=Math.min(NAV_COLS-1,cell.x+3);x++){const q=navPoint(x,y),d=distance(p,q);if(!NAV_GRID[y][x]&&d<bestD&&edgeClear(p,q)){best={x,y};bestD=d;}}return best;}
+const PATH_CACHE=new Map();
 export function findPath(from,to){
-  const sx=Math.floor(from.x/TILE),sy=Math.floor(from.y/TILE),tx=Math.floor(to.x/TILE),ty=Math.floor(to.y/TILE);
-  if(GRID[sy]?.[sx]!==0||GRID[ty]?.[tx]!==0)return [];
-  const start=sy*COLS+sx,goal=ty*COLS+tx,queue=[start],prev=new Map([[start,-1]]);
-  for(let i=0;i<queue.length&&!prev.has(goal);i++){
-    const q=queue[i],x=q%COLS,y=Math.floor(q/COLS);
-    for(const [dx,dy]of [[1,0],[0,1],[-1,0],[0,-1]]){const xx=x+dx,yy=y+dy,k=yy*COLS+xx;if(GRID[yy]?.[xx]===0&&!prev.has(k)){prev.set(k,q);queue.push(k);}}
-  }
+  if(!walkable(from.x,from.y,9)||!walkable(to.x,to.y,9))return [];
+  const s=nearestNode(from),t=nearestNode(to);if(!s||!t)return [];
+  const start=s.y*NAV_COLS+s.x,goal=t.y*NAV_COLS+t.x,key=`${start}:${goal}`;
+  let core=PATH_CACHE.get(key);
+  if(!core){const queue=[start],prev=new Map([[start,-1]]);
+  for(let i=0;i<queue.length&&!prev.has(goal);i++)for(const k of neighbors(queue[i]))if(!prev.has(k)){prev.set(k,queue[i]);queue.push(k);}
   if(!prev.has(goal))return [];
-  const result=[];for(let k=goal;k!==-1;k=prev.get(k))result.push({x:(k%COLS+.5)*TILE,y:(Math.floor(k/COLS)+.5)*TILE});
-  result.reverse();if(result.length>1&&distance(from,result[0])<3)result.shift();return result;
+  core=[];for(let k=goal;k!==-1;k=prev.get(k))core.push(navPoint(k%NAV_COLS,Math.floor(k/NAV_COLS)));core.reverse();if(PATH_CACHE.size>12000)PATH_CACHE.clear();PATH_CACHE.set(key,core);}
+  const result=core.slice();if(distance(from,result[0])<3)result.shift();if(!result.length||distance(result.at(-1),to)>2)result.push({x:to.x,y:to.y});return result;
 }
-export function lineOfSight(a,b){const n=Math.ceil(distance(a,b)/10);for(let i=1;i<n;i++){const f=i/n;if(GRID[Math.floor((a.y+(b.y-a.y)*f)/TILE)]?.[Math.floor((a.x+(b.x-a.x)*f)/TILE)]!==0)return false;}return true;}
-export function nearestGround(p){
-  const candidates=[];for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(GRID[y][x]===0)candidates.push({x:(x+.5)*TILE,y:(y+.5)*TILE});
-  candidates.sort((a,b)=>distance(a,p)-distance(b,p));return candidates[0]||{...SAFE};
-}
-export function closedRoute(waypoints){
-  const result=[];
-  for(let i=0;i<waypoints.length;i++){
-    const start=waypoints[i],leg=[{x:(Math.floor(start.x/TILE)+.5)*TILE,y:(Math.floor(start.y/TILE)+.5)*TILE},...findPath(start,waypoints[(i+1)%waypoints.length])];
-    for(const p of leg)if(!result.length||distance(result.at(-1),p)>.01)result.push(p);
-  }
-  if(result.length>1&&distance(result[0],result.at(-1))<.01)result.pop();
-  return result;
-}
+export function pathDistance(from,to){const path=findPath(from,to);return path.reduce((sum,p,i)=>sum+distance(i?path[i-1]:from,p),0);}
+export function nearestGround(p){const points=[];for(let y=0;y<ROWS;y++)for(let x=0;x<COLS;x++)if(!GRID[y][x])points.push({x:(x+.5)*TILE,y:(y+.5)*TILE});points.sort((a,b)=>distance(a,p)-distance(b,p));return points.find(q=>findPath(SAFE,q).length)||{...SAFE};}
+export function closedRoute(waypoints){const result=[];for(let i=0;i<waypoints.length;i++){const start=waypoints[i],leg=[start,...findPath(start,waypoints[(i+1)%waypoints.length])];for(const p of leg)if(!result.length||distance(result.at(-1),p)>.01)result.push({...p});}if(result.length>1&&distance(result[0],result.at(-1))<.01)result.pop();return result;}

@@ -58,9 +58,11 @@ Open http://localhost:8080. `npm start` uses Python 3 to serve `dist`; alternati
 
 The world is **40 × 26 tiles at 32 px**: 1280 × 832, approximately 1.73 times the previous area. Bazaar, radio chowk, residential gullies, drama club, park courtyard, chai corner, police chowki and green safehouse connect through street loops, narrow side lanes and open chase areas.
 
-`world.js` is the geometry source for drawing, ground collision, roof boundaries, loot validation and BFS navigation. Buildings, trees, banyan, fruit cart, scooter and parked auto share the same solid grid. Roof decorations are decorative. All ground tiles, spawn candidates, tea seats and rooftop access points are reachable from home.
+`world.js` is the geometry source for drawing, ground collision, roof boundaries, loot validation and BFS navigation. Buildings, trees, banyan, fruit cart, scooter and parked auto share the same solid grid. Roof decorations are decorative. Every spawn candidate, tea seat and rooftop access point is validated as reachable from home. The painted level uses a finer 8 px navigation graph for curved lanes and courtyard gates while keeping the 32 px world tiles.
 
-Original Canvas artwork follows the supplied neighbourhood concept: cream paving, sage greenery, terracotta and mustard roofs, dusty blue vehicles, striped awnings, fruit, brick details, solar panels, tanks, laundry, plants, rangoli and bunting. Every district has ambient animation; neighbours use legal ground routes. Steam, flags, laundry, foliage, birds, loot and patrols bring movement to the map. Reduced-motion preference freezes decorative animation and disables smooth camera easing; movement needed to play remains visible.
+The supplied detailed neighbourhood image is now the actual level background, bundled locally as `dist/assets/neighbourhood.webp`. It is cleaned of baked-in players, loot, route arrows and parked patrol vehicles so animated game objects remain truthful. The bazaar, park, chai stall, chowki and safehouse keep their illustrated positions. Authored polygon footprints follow the visible façades, walls and parked scooters; traversable rooftop terraces and access markers are defined separately.
+
+Steam, shop bulbs, laundry, falling leaves, birds, walkers and police cars animate over the painted scene. A local geometry-based fallback appears while the image decodes or if it cannot load. Reduced-motion preference freezes decorative animation and disables camera easing; movement needed to play remains visible.
 
 Solo uses a clamped follow camera. Local two-player shares a camera that fits both actors. A screen-anchored minimap, overview toggle, numbered objectives and dotted route home support navigation. The whole map renders before Start.
 
@@ -99,7 +101,7 @@ npm run check
 npm test
 ```
 
-The **31 automated tests** cover all connected ground tiles and landmarks, every solid footprint, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration.
+The **31 automated tests** cover all marked landmarks and courtyard gates, solid footprints, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration.
 
 Complete AI chor victories are simulated over four seeds at each difficulty with patrol traffic enabled. Cop victories are simulated against an idle chor. Canvas rendering was also checked with a raster Canvas implementation at full-map, desktop and 360 px phone widths.
 

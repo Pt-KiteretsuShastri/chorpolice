@@ -1,4 +1,4 @@
-import {WIDTH,HEIGHT,TILE,GRID,SAFE,ROOF_ACCESS,TEA_SPOTS,distance,findPath,nearestGround,closedRoute} from './world.js';
+import {WIDTH,HEIGHT,TILE,GRID,SAFE,ROOF_ACCESS,TEA_SPOTS,ART_URL,CIVILIAN_ROUTES,distance,findPath,nearestGround,closedRoute} from './world.js';
 import {Camera} from './camera.js';
 import {paintNeighbourhood,paintAmbient,drawPasserby} from './world-art.js';
 
@@ -58,7 +58,7 @@ export function drawActor(c,a,time=0,label='',carried=null){
   c.globalAlpha=1;
 }
 
-export function drawMap(c){paintNeighbourhood(c);}
+export function drawMap(c,image=null){paintNeighbourhood(c,image);}
 function carSprite(c,car,t){
   c.save();c.translate(car.x,car.y);c.rotate(car.dir-Math.PI/2);shadow(c,4,4,18,29);
   box(c,-16,-27,32,54,'#355c60',7);box(c,-14,-25,28,50,'#e2e8d3',6);box(c,-17,-16,4,11,'#2c443c',2);box(c,13,-16,4,11,'#2c443c',2);box(c,-17,13,4,10,'#2c443c',2);box(c,13,13,4,10,'#2c443c',2);
@@ -72,7 +72,12 @@ export class Renderer{
     this.canvas=canvas;this.ctx=canvas.getContext('2d');if(!this.ctx)throw new Error('Canvas 2D is unavailable.');
     this.background=makeCanvas();this.background.width=WIDTH;this.background.height=HEIGHT;drawMap(this.background.getContext('2d'));
     this.camera=new Camera();this.cssWidth=WIDTH;this.cssHeight=HEIGHT;this.dpr=1;this.homeRoute={key:'',points:[]};
-    this.civilians=[[{x:48,y:208},{x:272,y:304}],[{x:400,y:496},{x:720,y:624}],[{x:880,y:336},{x:1072,y:496}],[{x:592,y:656},{x:592,y:784}]].map(points=>closedRoute(points));
+    this.civilians=CIVILIAN_ROUTES.map(points=>closedRoute(points));
+  }
+  setMapImage(image){this.mapImage=image;drawMap(this.background.getContext('2d'),image);}
+  loadMapArt(ImageClass=globalThis.Image){
+    if(!ImageClass)return Promise.resolve(false);
+    return new Promise((resolve,reject)=>{const image=new ImageClass();image.onload=()=>{this.setMapImage(image);resolve(true);};image.onerror=()=>reject(new Error('Painted map could not load; the playable fallback is active.'));image.src=ART_URL;});
   }
   resize(width,height,pixelRatio=1){this.cssWidth=Math.max(1,width);this.cssHeight=Math.max(1,height);this.dpr=Math.min(2,pixelRatio||1);this.canvas.width=Math.round(this.cssWidth*this.dpr);this.canvas.height=Math.round(this.cssHeight*this.dpr);this.camera.reset();}
   render(g,time=0,reducedMotion=false,{overview=false,dt=.016}={}){
@@ -80,6 +85,7 @@ export class Renderer{
     const cam=this.camera.update(g,w/h,reducedMotion ? 1 : dt,overview,w<650),s=w/cam.w;
     c.setTransform(d,0,0,d,0,0);c.fillStyle='#d2cbb0';c.fillRect(0,0,w,h);
     c.setTransform(d*s,0,0,d*s,-cam.x*d*s,-cam.y*d*s);c.drawImage(this.background,0,0);paintAmbient(c,t,g.theme);
+    c.save();c.setLineDash([4,5]);c.strokeStyle='#b7f5a6';c.lineWidth=2;c.beginPath();c.arc(SAFE.x,SAFE.y,SAFE.radius-3,0,Math.PI*2);c.stroke();c.restore();text(c,'E · BANK',SAFE.x,SAFE.y-45,9,'#fff7d4');
     if(g.theme==='evening'){c.fillStyle='#e7a34c20';c.fillRect(0,0,WIDTH,HEIGHT);}
     for(let i=0;i<this.civilians.length;i++){
       const route=this.civilians[i];if(!route.length)continue;const step=(t*.6+i*9)%route.length,j=Math.floor(step),f=step-j,a=route[j],b=route[(j+1)%route.length];drawPasserby(c,a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,t,i);

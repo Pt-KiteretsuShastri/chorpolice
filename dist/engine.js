@@ -1,5 +1,5 @@
 /** Deterministic simulation. Browser, speech, and drawing stay in other modules. */
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,SAFE,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,roofAt,findPath,lineOfSight,nearestGround,closedRoute} from './world.js';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,NAV_TILE,SAFE,CHOR_SPAWN,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,roofAt,findPath,pathDistance,lineOfSight,nearestGround,closedRoute} from './world.js';
 import {seedNumber,randomFrom,shuffled} from './random.js';
 import {LOOT_TYPES,DISTRACTIONS,LINES,speakerName} from './dialogue.js';
 export {TILE,COLS,ROWS,WIDTH,HEIGHT,SAFE,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,ROOF_ACCESS,GRID,distance,walkable,findPath,lineOfSight,LOOT_TYPES};
@@ -16,7 +16,7 @@ export function makeRound(seed,previous=''){
     const types=shuffled(LOOT_TYPES,rand).slice(0,3);
     const loot=types.map((t,i)=>({...t,...spots[i],origin:{x:spots[i].x,y:spots[i].y},state:'ground',trust:0,layer:'ground'}));
     const signature=loot.map(l=>`${l.id}:${l.x},${l.y}`).join('|');
-    const travel=loot.reduce((sum,l)=>sum+findPath(SAFE,l).length*64,0);
+    const travel=loot.reduce((sum,l)=>sum+pathDistance(SAFE,l)*2,0);
     if(signature===previous||spots.some((p,i)=>spots.some((q,j)=>j<i&&distance(p,q)<100))||travel>10500)continue;
     const eventIds=shuffled(Object.keys(EVENT_TYPES),rand).slice(0,2);
     return {seed:used,signature,loot,theme:rand()<.5?'morning':'evening',eventPlan:eventIds.map((type,i)=>({type,start:(i?72:28)+Math.floor(rand()*6),duration:12,announced:false,started:false,done:false}))};
@@ -29,7 +29,7 @@ export class Game{
   constructor({role='chor',duo=false,difficulty='normal',seed=Date.now(),previous='',traffic=true}={}){
     Object.assign(this,makeRound(seed,previous));this.rand=randomFrom(this.seed^0xbad5eed);this.role=role;this.duo=duo;this.difficulty=difficulty;this.traffic=traffic;
     this.phase='ready';this.elapsed=0;this.remaining=ROUND_SECONDS;this.winner=null;this.reason='';
-    this.chor=actor('chor',SAFE.x,SAFE.y-56);this.cop=actor('cop',STATION.x,STATION.y);this.cop.state='patrol';
+    this.chor=actor('chor',CHOR_SPAWN.x,CHOR_SPAWN.y);this.cop=actor('cop',STATION.x,STATION.y);this.cop.state='patrol';
     this.carried=null;this.banked=0;this.catches=0;this.negotiation=null;this.speech=[];this.rings=[];this.particles=[];this.events=[];this.lastTalk={};this.recentLines={};
     this.alert=0;this.lastNoise=null;this.patrol=0;this.netCooldown=0;this.netVisual=0;this.chatter=4;this.boostTime=0;
     this.activeEvent=null;this.eventBanner=null;this.chai=CHAI_SPOTS.map(p=>({...p,cooldown:0,temporary:false}));this.boosts=[];this.decoy=null;
@@ -176,7 +176,7 @@ export class Game{
     if(this.carried){const l=this.carried;l.state='ground';l.x=l.origin.x;l.y=l.origin.y;l.trust=0;this.carried=null;}
     this.negotiation=null;this.alert=0;this.lastNoise=null;this.cop.state='patrol';this.say('cop',LINES.caught,{priority:3});this.emit('catch',`${source==='patrol'?'Patrol tag':'Pakde gaye'}! ${3-this.catches} chances left.`);
     if(this.catches>=3){this.finish('cop','three-catches');return true;}
-    Object.assign(this.chor,actor('chor',SAFE.x,SAFE.y-56),{invuln:4});Object.assign(this.cop,actor('cop',STATION.x,STATION.y),{stun:1.5,state:'patrol'});this.cars.forEach(c=>c.aware=0);return true;
+    Object.assign(this.chor,actor('chor',CHOR_SPAWN.x,CHOR_SPAWN.y),{invuln:4});Object.assign(this.cop,actor('cop',STATION.x,STATION.y),{stun:1.5,state:'patrol'});this.cars.forEach(c=>c.aware=0);return true;
   }
   eventStep(){
     for(const e of this.eventPlan){
