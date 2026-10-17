@@ -1,12 +1,13 @@
 import {Game,EVENT_TYPES} from './engine.js';
 import {Renderer} from './renderer.js';
-import {SpeechController,Effects} from './audio.js';
+import {Effects} from './audio.js';
+import {CharacterVoice} from './character-voice.js';
 import {movement,actionFor} from './input.js';
 import {OnlineRoom,roomInURL,roomLink} from './online-room.js';
 import {HostControls,RemoteView,snapshot,validSnapshot} from './net-state.js';
 
 const $=id=>document.getElementById(id),canvas=$('game'),keys=new Set(),held=new Set();
-const touch={x:0,y:0,sprint:false},speech=new SpeechController(window),effects=new Effects(window);
+const touch={x:0,y:0,sprint:false},speech=new CharacterVoice(window),effects=new Effects(window);
 const motion=window.matchMedia('(prefers-reduced-motion: reduce)');let reducedMotion=motion.matches;
 motion.addEventListener?.('change',e=>reducedMotion=e.matches);
 const fmt=n=>`${Math.floor(Math.max(0,n)/60)}:${String(Math.floor(Math.max(0,n)%60)).padStart(2,'0')}`;
@@ -21,11 +22,12 @@ function clearInput(){keys.clear();held.clear();Object.assign(touch,{x:0,y:0,spr
 function focusGame(){canvas.focus({preventScroll:true});}
 function soundLabels(){
   $('voice-btn').textContent=speech.supported?(speech.hindiUnavailable?'Hindi unavailable':`Hindi ${voiceWanted?'on':'off'}`):'Captions only';$('voice-btn').setAttribute('aria-pressed',String(voiceWanted&&speech.supported));$('voice-btn').disabled=!speech.supported;
-  $('voice-btn').title=speech.supported?(speech.hindiUnavailable?'No Hindi voice is installed on this device. Captions stay on.':'Hindi dialogue · captions always stay on'):'This browser has no speech synthesis. Captions stay on.';
+  $('voice-btn').title=speech.supported?(speech.hindiUnavailable?'No Hindi voice is installed on this device. Captions stay on.':speech.packAvailable?'ElevenLabs Hindi character clips · device voice fallback · captions always stay on':'Device Hindi dialogue · captions always stay on'):'This browser has no speech synthesis. Captions stay on.';
   $('sound-btn').textContent=`SFX ${effects.enabled?'on':'off'}`;$('sound-btn').setAttribute('aria-pressed',String(effects.enabled));
-  $('sound-note').textContent=!speech.supported?'Speech is unavailable here. Captions and sound effects still work.':speech.hindiUnavailable?'No Hindi voice is installed here. Captions and sound effects still work.':'Start enables Hindi dialogue and sound. Both can be muted separately.';
+  $('sound-note').textContent=!speech.supported?'Speech is unavailable here. Captions and sound effects still work.':speech.hindiUnavailable?'No Hindi voice is installed here. Captions and sound effects still work.':speech.packAvailable?'Start enables Hindi character voices and sound. Both can be muted separately.':'Start enables device Hindi dialogue and sound. Both can be muted separately.';
 }
 speech.onVoicesChanged=soundLabels;
+speech.loadPack();
 function unlockSound(){speech.setEnabled(voiceWanted);effects.unlock();}
 function saveSound(){try{localStorage.setItem('gully-voice',voiceWanted?'on':'off');localStorage.setItem('gully-sfx',effects.enabled?'on':'off');}catch{}}
 function controls(){
