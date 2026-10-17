@@ -1,0 +1,16 @@
+{
+  "name": "gully-chase",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A joyful neighbourhood chase with unusually opinionated loot.",
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory dist",
+    "test": "node --test tests/*.test.js",
+    "check": "node --check dist/engine.js && node --check dist/world-art.js && node --check dist/renderer.js && node --check dist/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Pt-KiteretsuShastri/chorpolice.git"
+  }
+}
