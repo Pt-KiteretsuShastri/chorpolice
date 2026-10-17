@@ -27,6 +27,10 @@ function saveSound(){try{localStorage.setItem('gully-voice',voiceWanted?'on':'of
 function controls(){
   $('controls').innerHTML=duo?'<kbd>WASD</kbd> P1 chor · <kbd>Arrows</kbd> P2 cop · <kbd>Shift</kbd> / <kbd>/</kbd> sprint · <kbd>Enter</kbd> cop net · <kbd>P</kbd> pause':role==='cop'?'<kbd>WASD</kbd> / <kbd>Arrows</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> net · <kbd>M</kbd> overview · <kbd>P</kbd> pause':'<kbd>WASD</kbd> / <kbd>Arrows</kbd> move · <kbd>Shift</kbd> sprint · <kbd>E</kbd> interact · <kbd>Space</kbd> jump · <kbd>1–3</kbd> offer · <kbd>M</kbd> overview · <kbd>P</kbd> pause';
   const cop=role==='cop'&&!duo;$('touch-action').textContent=cop?'Throw net':'Talk / bank / chai';$('touch-jump').hidden=cop;$('touch-special').hidden=cop;$('touch-drop').hidden=cop;$('mobile-controls').classList.toggle('duo-hidden',duo);
+  $('sidebar-role').textContent=duo?'LOCAL · P1 + P2':`SOLO ${role.toUpperCase()}`;
+  $('sidebar-objective').textContent=cop?'Tag the chor three times, or hold the gully until time runs out.':'Convince three treasures. Deliver them to the green safehouse.';
+  const rows=cop?[['WASD / arrows','Move'],['Shift','Sprint'],['Space','Throw net'],['M','Map overview'],['P / Esc','Pause']]:duo?[['WASD','P1 chor moves'],['Arrows','P2 cop moves'],['Shift / /','P1 / P2 sprint'],['E','Talk / bank / chai'],['1 · 2 · 3','Choose an offer'],['Space','Chor rooftop jump'],['Enter','Cop throws net'],['F / Q','Renew offer / drop'],['M / P','Overview / pause']]:[['WASD / arrows','Move'],['Shift','Sprint'],['E','Talk / bank / chai'],['1 · 2 · 3','Choose an offer'],['Space','Climb / rooftop jump'],['F','Renew a promise'],['Q','Drop loot'],['M','Map overview'],['P / Esc','Pause']];
+  $('control-list').innerHTML=rows.map(([key,label])=>`<div><dt><kbd>${key}</kbd></dt><dd>${label}</dd></div>`).join('');
 }
 function setSeed(){seed=game.seed;$('menu-seed').textContent=`CHALLENGE ${seed} · ${game.theme==='morning'?'WARM MORNING':'GOLDEN EVENING'}`;try{const url=new URL(location.href);url.searchParams.set('seed',String(seed));history.replaceState(null,'',url);}catch{}}
 function makeGame(nextSeed=seed,previous=''){

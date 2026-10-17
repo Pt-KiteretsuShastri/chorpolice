@@ -2,7 +2,7 @@
 
 A complete, browser-local chor–police game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the maal home. Solo chor, solo cop and same-keyboard two-player are included.
 
-The page contains the game, its instructions and a friend invitation. No marketing sections, accounts, paid APIs, runtime dependencies or remote assets.
+The page contains the game, a role-aware controls sidebar and a friend invitation. The sidebar stays beside the playfield on wide screens and moves underneath it on smaller screens. No marketing sections, accounts, paid APIs, runtime dependencies or remote assets.
 
 ## Deploy to Vercel
 
