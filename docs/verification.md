@@ -7,13 +7,14 @@ The map, sidebar and online-room changes were committed as separate completed st
 | Supplied map graphics and aligned geometry | [2a37945](https://github.com/Pt-KiteretsuShastri/chorpolice/commit/2a379458bc0f39dfa8913b6e6b1aaf5d61546c6b) |
 | Responsive controls sidebar | [576d274](https://github.com/Pt-KiteretsuShastri/chorpolice/commit/576d2747706e42d6b3b773a921d98c0354facddd) |
 | Online rooms and join links | [2ea4694](https://github.com/Pt-KiteretsuShastri/chorpolice/commit/2ea469422fc7abb4c451afced8f89b2fd4d6a22a) |
+| Wider gullies with aligned geometry | [58d3ac0](https://github.com/Pt-KiteretsuShastri/chorpolice/commit/58d3ac088141693953d1c9b417328746157e03c0) |
 
 Documentation is finalized in a following commit. Vercel continues to serve `dist`, with no install or build command and no environment variables.
 
 ## Passed
 
 - `npm run check`: syntax checks for every authored browser module.
-- `npm test`: 41 passing tests. This preserves the previous gameplay cases while aligning them to the supplied artwork and adds ten online/protocol tests.
+- `npm test`: 44 passing tests, including wider-lane clearance, complete Hindi translation coverage, Hindi voice preference, delayed loading, English-only device fallback and consistent Loot product copy, alongside the existing gameplay and online/protocol tests.
 - `npm run test:dom`: actual application modules are loaded into two isolated DOM contexts with paired test data channels. The harness creates a room, opens its link in the second context, readies/starts both players, sends guest controls, pauses/resumes both, prepares a rematch, disconnects/rejoins during that round, checks fresh guest inputs after rejoining, and returns to solo.
 - Seeded randomization: 200 rounds checked for distinct personalities, districts, clearance, separation and path-distance bounds.
 - Complete simulation rounds: AI chor wins over four seeds at all difficulties, with police traffic enabled. Cop victories are simulated against an idle chor. Banking, caught-loot reset, timer expiry and event cleanup are checked.
@@ -36,6 +37,6 @@ The DOM harness uses test channels, not native WebRTC. Interactive browser contr
 4. Play a full round. Check loot persuasion, bank deliveries, rooftop protection, tea invisibility, shared catch count and matching result screens.
 5. Pause from each side. The host resumes; neither clock should advance while paused.
 6. Start a rematch, ready again, then interrupt/rejoin the guest connection. Verify the round stays paused until both are ready and guest controls work after rejoining.
-7. On a phone, check controls, captions and sidebar readability. Try voices muted, SFX muted, reduced motion and fullscreen where supported.
+7. On a phone, check controls, captions and sidebar readability. With a Hindi voice installed, confirm the chor, cop and loot speak Hindi; without one, confirm the unavailable notice and captions. Try voices muted, SFX muted, reduced motion and fullscreen where supported.
 
 Rooms admit one guest, require the host tab to stay open and use free third-party signaling/ICE services. Restrictive networks or a service outage may prevent a connection; the lobby provides timeout/error text and retry/leave controls. The host is trusted and authoritative; the game is intended for casual play with friends.

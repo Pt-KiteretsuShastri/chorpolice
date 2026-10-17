@@ -20,11 +20,12 @@ function status(text){if(text){$('status').textContent=text;lastStatus=performan
 function clearInput(){keys.clear();held.clear();Object.assign(touch,{x:0,y:0,sprint:false});document.querySelectorAll('[data-move]').forEach(b=>b.classList.remove('pressed'));}
 function focusGame(){canvas.focus({preventScroll:true});}
 function soundLabels(){
-  $('voice-btn').textContent=speech.supported?`Voice ${voiceWanted?'on':'off'}`:'Captions only';$('voice-btn').setAttribute('aria-pressed',String(voiceWanted&&speech.supported));$('voice-btn').disabled=!speech.supported;
-  $('voice-btn').title=speech.supported?'Spoken dialogue · captions always stay on':'This browser has no speech synthesis. Captions stay on.';
+  $('voice-btn').textContent=speech.supported?(speech.hindiUnavailable?'Hindi unavailable':`Hindi ${voiceWanted?'on':'off'}`):'Captions only';$('voice-btn').setAttribute('aria-pressed',String(voiceWanted&&speech.supported));$('voice-btn').disabled=!speech.supported;
+  $('voice-btn').title=speech.supported?(speech.hindiUnavailable?'No Hindi voice is installed on this device. Captions stay on.':'Hindi dialogue · captions always stay on'):'This browser has no speech synthesis. Captions stay on.';
   $('sound-btn').textContent=`SFX ${effects.enabled?'on':'off'}`;$('sound-btn').setAttribute('aria-pressed',String(effects.enabled));
-  $('sound-note').textContent=speech.supported?'Start enables voices and sound. Both can be muted separately.':'Speech is unavailable here. Start with captions and optional sound effects.';
+  $('sound-note').textContent=!speech.supported?'Speech is unavailable here. Captions and sound effects still work.':speech.hindiUnavailable?'No Hindi voice is installed here. Captions and sound effects still work.':'Start enables Hindi dialogue and sound. Both can be muted separately.';
 }
+speech.onVoicesChanged=soundLabels;
 function unlockSound(){speech.setEnabled(voiceWanted);effects.unlock();}
 function saveSound(){try{localStorage.setItem('gully-voice',voiceWanted?'on':'off');localStorage.setItem('gully-sfx',effects.enabled?'on':'off');}catch{}}
 function controls(){
@@ -80,7 +81,7 @@ function processEvents(){
 function finish(){
   endedHandled=true;clearInput();$('pause-btn').disabled=true;$('negotiation').hidden=true;$('result-screen').hidden=false;
   $('result-kicker').textContent=duo?`${game.winner==='chor'?'PLAYER 1':'PLAYER 2'} WINS`:game.winner===role?'GULLY LEGEND':'THE GULLY WANTS A REMATCH';
-  $('result-title').textContent=game.winner==='chor'?'Maal safe. Ab chai!':game.reason==='timeout'?'Time’s up, chor!':'Pakde gaye!';
+  $('result-title').textContent=game.winner==='chor'?'Loot safe. Ab chai!':game.reason==='timeout'?'Time’s up, chor!':'Pakde gaye!';
   $('result-copy').textContent=game.winner==='chor'?'Three persuaded treasures, safely home. The neighbourhood has a story to tell.':game.reason==='timeout'?'The cop held the gully for two minutes. The loot is still negotiating.':'Three tags for the cop. The samosa demands a lawyer.';
   $('result-stats').textContent=`${game.banked}/3 banked · ${fmt(game.elapsed)} · ${game.stats.jumps} rooftop jumps${game.winner==='chor'&&game.catches===0?' · Clean escape!':''}${game.winner==='chor'&&game.stats.noise===0?' · Quiet getaway!':''}`;
   $('again-btn').textContent=network&&!network.isHost?'Request rematch':'Rematch · new loot';$('replay-btn').hidden=!!network&&!network.isHost;
@@ -103,7 +104,7 @@ function invite(){openDialog('invite-dialog');const u=new URL(location.href);u.s
 function mapToggle(){overview=!overview;$('map-btn').setAttribute('aria-pressed',String(overview));focusGame();}
 function modeLabels(){
   document.querySelectorAll('[data-mode]').forEach(el=>{const selected=onlineIntent?el.dataset.mode==='online':duo?el.dataset.mode==='duo':el.dataset.mode===role;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',String(selected));});
-  $('menu-title').textContent=joinTarget?'Join your friend’s gully.':'Bring the maal home.';$('start-btn').textContent=joinTarget?'Join as cop →':onlineIntent?'Create online room →':'Enter the gully →';$('challenge-options').hidden=onlineIntent;
+  $('menu-title').textContent=joinTarget?'Join your friend’s gully.':'Bring the loot home.';$('start-btn').textContent=joinTarget?'Join as cop →':onlineIntent?'Create online room →':'Enter the gully →';$('challenge-options').hidden=onlineIntent;
 }
 document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{network?.close();network=null;joinTarget=null;onlineIntent=b.dataset.mode==='online';duo=b.dataset.mode==='duo';role=b.dataset.mode==='cop'?'cop':'chor';const url=new URL(location.href);url.searchParams.delete('room');history.replaceState(null,'',url);modeLabels();makeGame(seed);}));
 $('difficulty').addEventListener('change',()=>makeGame(seed));$('start-btn').addEventListener('click',()=>start());$('again-btn').addEventListener('click',()=>start({fresh:true}));$('replay-btn').addEventListener('click',()=>start({replay:true}));$('restart-btn').addEventListener('click',()=>start({fresh:true}));

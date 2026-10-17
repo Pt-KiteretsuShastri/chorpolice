@@ -1,7 +1,7 @@
 /** Deterministic simulation. Browser, speech, and drawing stay in other modules. */
 import {TILE,COLS,ROWS,WIDTH,HEIGHT,NAV_TILE,SAFE,CHOR_SPAWN,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,roofAt,findPath,pathDistance,lineOfSight,nearestGround,closedRoute} from './world.js';
 import {seedNumber,randomFrom,shuffled} from './random.js';
-import {LOOT_TYPES,DISTRACTIONS,LINES,speakerName} from './dialogue.js';
+import {LOOT_TYPES,DISTRACTIONS,LINES,SHARED_LINES,hindiLine,speakerName} from './dialogue.js';
 export {TILE,COLS,ROWS,WIDTH,HEIGHT,SAFE,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,ROOF_ACCESS,GRID,distance,walkable,findPath,lineOfSight,LOOT_TYPES};
 export const ROUND_SECONDS=120;
 export const EVENT_TYPES={chai:{title:'Chai Happy Hour',description:'Extra chai is on the house.'},sprint:{title:'Chutney Sprint',description:'Find the glowing chutney for a speed burst.'},decoy:{title:'Wrong Number!',description:'A fake radio broadcast distracts the patrol.'}};
@@ -47,7 +47,7 @@ export class Game{
     const pool=available.length?available:(Array.isArray(lines)?lines:[lines]);const text=pool[Math.floor(this.rand()*pool.length)];
     this.lastTalk[who]=this.elapsed;this.recentLines[who]=[...(this.recentLines[who]||[]),text].slice(-3);
     this.speech=this.speech.filter(s=>s.who!==who);this.speech.push({who,text,anchor,life:3.5,priority});this.speech=this.speech.slice(-3);
-    const translated=typeof hi==='object' ? hi?.[text] : hi;
+    const translated=(typeof hi==='object' ? hi?.[text] : hi)||hindiLine(text);
     this.emit('dialogue',`${speakerName(who)}: ${text}`,{speaker:who,spoken:text,hi:translated,priority});
   }
   burst(x,y,color,n=12){for(let i=0;i<n;i++){const a=this.rand()*Math.PI*2,s=25+this.rand()*65;this.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.5+this.rand()*.5,color});}}
@@ -66,13 +66,13 @@ export class Game{
     const n=this.negotiation,l=this.loot.find(l=>l.id===n.lootId),choice=n.choices[index];
     if(!l||!choice||this.elapsed<n.lockedUntil)return false;
     if(n.mode==='pickup'&&(l.state!=='ground'||this.chor.layer!=='ground'||distance(l,this.chor)>65)){this.negotiation=null;return false;}
-    if(!choice.correct){n.lockedUntil=this.elapsed+.8;this.noise(this.chor,l.noise);this.say(l.id,'That is not the deal I wanted!',{priority:3,anchor:{x:l.x,y:l.y}});this.emit('refusal',`${l.name} refused. Read what it wants and try another offer.`);return false;}
+    if(!choice.correct){n.lockedUntil=this.elapsed+.8;this.noise(this.chor,l.noise);this.say(l.id,SHARED_LINES.refusal,{priority:3,anchor:{x:l.x,y:l.y}});this.emit('refusal',`${l.name} refused. Read what it wants and try another offer.`);return false;}
     this.stats.persuaded++;l.trust=1;this.negotiation=null;this.chatter=l.interval+2;
     if(n.mode==='pickup'){
       l.state='carried';this.carried=l;if(l.id==='chappal')this.boostTime=4;
       this.burst(this.chor.x,this.chor.y,l.color);this.emit('pickup',`${l.name} is coming along. Keep its trust high.`);
     }else this.emit('hush',`${l.name} bought your promise. Quiet again.`);
-    this.say(l.id,[l.reply,'Deal! Keep your word and I will keep quiet.','Okay, partner. Let us get out of here.'],{priority:3,hi:l.replyHi?{[l.reply]:l.replyHi}:null});if(n.mode==='pickup')this.say('chor',LINES.pickup,{priority:1});return true;
+    this.say(l.id,[l.reply,...SHARED_LINES.agreement],{priority:3,hi:l.replyHi?{[l.reply]:l.replyHi}:null});if(n.mode==='pickup')this.say('chor',LINES.pickup,{priority:1});return true;
   }
   leaveTea(){if(!this.hidden)return;this.chor.seated=null;this.chor.seatTime=0;this.chor.invuln=1;this.emit('tea','Back in the gully. Your disguise is gone.');}
   action(kind){
@@ -116,7 +116,7 @@ export class Game{
   throwNet(){
     if(this.netCooldown>0||this.cop.stun>0)return;
     this.netCooldown=5;this.netVisual=.35;
-    if(this.catchable&&distance(this.cop,this.chor)<90&&lineOfSight(this.cop,this.chor)){this.chor.stun=1.5;this.emit('net','Net landed. Close in for the tag!');this.say('chor','Arre, net band karo!',{priority:3});}
+    if(this.catchable&&distance(this.cop,this.chor)<90&&lineOfSight(this.cop,this.chor)){this.chor.stun=1.5;this.emit('net','Net landed. Close in for the tag!');this.say('chor',SHARED_LINES.net,{priority:3});}
     else this.emit('net',this.hidden||this.chor.layer!=='ground'?'No clear target. Tea camouflage and rooftops block nets.':'Net missed. It reaches 90 pixels with a clear view.');
   }
   move(a,dx,dy,sprint,dt,speed){
@@ -190,7 +190,7 @@ export class Game{
       if(e.started&&!e.done&&this.elapsed>=e.start+e.duration){e.done=true;this.activeEvent=null;this.eventBanner=null;this.chai=this.chai.filter(p=>!p.temporary);this.boosts=[];this.decoy=null;}
     }
   }
-  finish(winner,reason){if(this.phase!=='playing')return;this.phase='ended';this.winner=winner;this.reason=reason;this.negotiation=null;this.eventBanner=null;this.activeEvent=null;this.boosts=[];this.decoy=null;this.chai=this.chai.filter(p=>!p.temporary);this.emit('end',winner==='chor'?'Three treasures banked. Chor wins!':reason==='timeout'?'Time is up. The cop holds the gully!':'Three tags. Cop wins!');this.say(winner==='chor'?'chor':'cop',winner==='chor'?LINES.victory:'The gully is safe. Chai, anyone?',{priority:3});}
+  finish(winner,reason){if(this.phase!=='playing')return;this.phase='ended';this.winner=winner;this.reason=reason;this.negotiation=null;this.eventBanner=null;this.activeEvent=null;this.boosts=[];this.decoy=null;this.chai=this.chai.filter(p=>!p.temporary);this.emit('end',winner==='chor'?'Three treasures banked. Chor wins!':reason==='timeout'?'Time is up. The cop holds the gully!':'Three tags. Cop wins!');this.say(winner==='chor'?'chor':'cop',winner==='chor'?LINES.victory:SHARED_LINES.copWin,{priority:3});}
   update(dt,input={}){
     if(this.phase!=='playing')return;
     dt=clamp(dt,0,.05);this.elapsed+=dt;this.remaining=Math.max(0,ROUND_SECONDS-this.elapsed);this.eventStep();
@@ -204,7 +204,7 @@ export class Game{
     if(this.catchable&&distance(this.chor,this.cop)<24&&this.cop.stun<=0)this.tag();if(this.phase!=='playing')return;
     if(this.negotiation?.mode==='pickup'){const l=this.loot.find(l=>l.id===this.negotiation.lootId);if(distance(l,this.chor)>67||this.chor.layer!=='ground')this.negotiation=null;}
     if(this.carried){const l=this.carried;l.x=this.chor.x;l.y=this.chor.y;l.trust=Math.max(0,l.trust-dt*(this.hidden?0:this.chor.sprinting ? .052 : .031));this.chatter-=dt;
-      if(this.chatter<=0&&!this.hidden){this.chatter=l.interval;if(l.trust<.25){this.noise(this.chor,l.noise);this.say(l.id,l.complaints,{priority:2});}else this.say(l.id,l.trust>.7?'Good deal. Keeping it quiet.':'Still waiting for my promise…',{priority:1});}}
+      if(this.chatter<=0&&!this.hidden){this.chatter=l.interval;if(l.trust<.25){this.noise(this.chor,l.noise);this.say(l.id,l.complaints,{priority:2});}else this.say(l.id,l.trust>.7?SHARED_LINES.quiet:SHARED_LINES.waiting,{priority:1});}}
     for(const p of this.chai){p.cooldown=Math.max(0,p.cooldown-dt);if(p.cooldown===0)for(const a of [this.chor,this.cop])if(a.layer==='ground'&&distance(a,p)<24&&a.energy<85){a.energy=100;p.cooldown=16;this.burst(p.x,p.y,'#e4be69');this.emit('chai','A cutting chai. Energy restored.');break;}}
     if(this.chor.layer==='ground')for(const p of this.boosts)if(p.active&&distance(p,this.chor)<25){p.active=false;this.boostTime=7;this.emit('boost','Chutney Sprint! Seven seconds of extra speed.');this.burst(p.x,p.y,'#9bc66c');}
     this.neighborIn-=dt;if(this.neighborIn<=0){this.neighborIn=20+this.rand()*7;this.say('neighbor',LINES.neighbor,{priority:1,anchor:{x:336,y:560}});}

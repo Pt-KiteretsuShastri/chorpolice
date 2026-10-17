@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#244d3b"><meta name="description" content="A joyful neighbourhood chase. Convince three opinionated treasures, escape over rooftops, and get the maal home.">
-  <title>Gully Chase — Bigger Gully, Louder Maal</title><link rel="stylesheet" href="./style.css">
+  <meta name="theme-color" content="#244d3b"><meta name="description" content="A joyful neighbourhood chase. Convince three opinionated treasures, escape over rooftops, and get the loot home.">
+  <title>Gully Chase — Bigger Gully, Louder Loot</title><link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <main class="shell">
     <header class="topbar">
-      <a class="brand" href="./" aria-label="Gully Chase home"><span class="brand-mark" aria-hidden="true">G</span><span>Gully Chase<small>Bigger gully. Louder maal.</small></span></a>
+      <a class="brand" href="./" aria-label="Gully Chase home"><span class="brand-mark" aria-hidden="true">G</span><span>Gully Chase<small>Bigger gully. Louder loot.</small></span></a>
       <nav aria-label="Game options"><button id="help-btn">How to play</button><button id="invite-btn" class="primary">Invite a friend ↗</button></nav>
     </header>
     <div class="game-layout">
@@ -25,13 +25,13 @@
         <div class="event-banner" id="event-banner" hidden><strong id="event-title"></strong><span id="event-time"></span><small id="event-description"></small></div>
         <div class="overlay" id="menu-screen">
           <div class="panel menu">
-            <span class="eyebrow">120 SECONDS · 3 TREASURES</span><h1 id="menu-title">Bring the maal home.</h1>
+            <span class="eyebrow">120 SECONDS · 3 TREASURES</span><h1 id="menu-title">Bring the loot home.</h1>
             <p>Make the loot an offer. Dodge the patrol. Bank all three at the green safehouse.</p>
             <div class="mode-options" role="group" aria-label="Choose your role">
               <button data-mode="chor" class="selected" aria-pressed="true">Solo chor<small>Steal & escape</small></button><button data-mode="cop" aria-pressed="false">Solo cop<small>Patrol & catch</small></button><button data-mode="online" aria-pressed="false">Online<small>Invite by link</small></button><button data-mode="duo" aria-pressed="false">Two players<small>Same keyboard</small></button>
             </div>
             <label class="difficulty" id="challenge-options">Challenge <select id="difficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option></select></label>
-            <p class="sound-note" id="sound-note">Start enables voices and sound. Both can be muted separately.</p>
+            <p class="sound-note" id="sound-note">Start enables Hindi dialogue and sound. Both can be muted separately.</p>
             <button class="primary start" id="start-btn">Enter the gully →</button><small class="seed" id="menu-seed"></small>
           </div>
         </div>
@@ -43,7 +43,7 @@
       </div>
       <div class="game-toolbar">
         <p id="status">Amber ladders lead to rooftops. The green courtyard is home.</p>
-        <div class="tools"><button id="voice-btn" aria-pressed="true" title="Toggle spoken dialogue">Voice on</button><button id="sound-btn" aria-pressed="true" title="Toggle sound effects">SFX on</button><button id="map-btn" aria-pressed="false" title="Overview (M)">Map</button><button id="pause-btn" disabled title="Pause (P)">Pause</button><button id="fullscreen-btn" title="Fullscreen" aria-label="Enter fullscreen">⛶</button></div>
+        <div class="tools"><button id="voice-btn" aria-pressed="true" title="Toggle Hindi dialogue">Hindi on</button><button id="sound-btn" aria-pressed="true" title="Toggle sound effects">SFX on</button><button id="map-btn" aria-pressed="false" title="Overview (M)">Map</button><button id="pause-btn" disabled title="Pause (P)">Pause</button><button id="fullscreen-btn" title="Fullscreen" aria-label="Enter fullscreen">⛶</button></div>
       </div>
       <p class="caption" id="caption" role="status" aria-live="polite" aria-atomic="true">Captions stay on, even when sound is muted.</p>
       <div class="touch-controls" id="mobile-controls" aria-label="Touch game controls">

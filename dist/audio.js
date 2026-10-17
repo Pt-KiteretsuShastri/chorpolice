@@ -3,9 +3,11 @@ export class SpeechController{
   constructor(env=globalThis,now=()=>performance.now()/1000){
     this.env=env;this.now=now;this.synth=env.speechSynthesis;this.Utterance=env.SpeechSynthesisUtterance;
     this.supported=!!(this.synth&&this.Utterance&&typeof this.synth.speak==='function');this.enabled=false;this.voices=[];this.last=-100;this.priority=0;this.serial=0;
-    this.refresh=()=>{try{this.voices=this.synth?.getVoices?.()||[];}catch{this.voices=[];}};
+    this.refresh=()=>{try{this.voices=this.synth?.getVoices?.()||[];}catch{this.voices=[];}this.onVoicesChanged?.();};
     this.refresh();this.synth?.addEventListener?.('voiceschanged',this.refresh);
   }
+  get hindiVoice(){return this.voices.find(v=>/^hi[-_]IN$/i.test(v.lang))||this.voices.find(v=>/^hi(?:[-_]|$)/i.test(v.lang));}
+  get hindiUnavailable(){return this.voices.length>0&&!this.hindiVoice;}
   setEnabled(value){
     this.stop();this.enabled=!!value&&this.supported;
     if(this.enabled){try{const u=new this.Utterance(' ');u.volume=0;this.synth.speak(u);this.synth.cancel();}catch{this.enabled=false;}}
@@ -18,11 +20,13 @@ export class SpeechController{
     if(priority<3&&now-this.last<2.4)return false;
     if(this.synth.speaking&&priority<this.priority)return false;
     try{
-      this.refresh();const hi=this.voices.find(v=>/^hi(-|_)/i.test(v.lang));
-      const voice=(event.hi&&hi)||this.voices.find(v=>/^en[-_]IN$/i.test(v.lang))||hi||this.voices.find(v=>/^en/i.test(v.lang))||this.voices[0];
-      // Cancel before speaking so callbacks never build a stale queue.
-      this.synth.cancel();const serial=++this.serial,u=new this.Utterance(event.hi&&voice===hi?event.hi:event.spoken||event.text);
-      if(voice)u.voice=voice;u.lang=voice?.lang||'en-IN';u.rate=1.02;u.volume=.8;
+      this.refresh();const voice=this.hindiVoice;
+      const text=event.hi||(/[\u0900-\u097f]/.test(event.spoken||'')?event.spoken:null);
+      // Ask for Hindi while voices load. If the installed list has no Hindi voice,
+      // keep captions rather than reading Hindi lines with an English voice.
+      if(!text||this.hindiUnavailable)return false;
+      this.synth.cancel();const serial=++this.serial,u=new this.Utterance(text);
+      if(voice)u.voice=voice;u.lang=voice?.lang||'hi-IN';u.rate=.98;u.volume=.8;
       u.pitch=event.speaker==='cop' ? .82:event.speaker==='samosa'?1.3:event.speaker==='radio'?1.05:1;
       this.last=now;this.priority=priority;u.onend=()=>{if(serial===this.serial)this.priority=0;};u.onerror=u.onend;this.synth.speak(u);return true;
     }catch{this.stop();return false;}

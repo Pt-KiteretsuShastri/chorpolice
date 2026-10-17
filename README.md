@@ -1,6 +1,6 @@
-# Gully Chase · Bigger Gully, Louder Maal
+# Gully Chase · Bigger Gully, Louder Loot
 
-A Canvas chor–police browser game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the maal home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
+A Canvas chor–police browser game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the loot home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
 
 The page contains the game, a role-aware controls sidebar and a friend invitation. The sidebar stays beside the playfield on wide screens and moves underneath it on smaller screens. No marketing sections, accounts, paid APIs or remote art. PeerJS 1.5.5 is bundled locally for online connections; creating or joining a room uses its free cloud signaling and default ICE services.
 
@@ -102,11 +102,17 @@ Two non-overlapping, twelve-second events are drawn from **Chai Happy Hour** (th
 
 ## Voices and accessibility
 
-Start is the user interaction that enables optional browser speech and synthesized sound effects. **Voice** and **SFX** have separate toggles. Captions stay on when muted. Speech prefers an installed Indian English voice, uses Hindi for translated lines where available, handles delayed voices and falls back to other voices or captions. Actual voices depend on the browser/device. No microphone permission or API key is requested.
+Start is the user interaction that enables optional browser speech and synthesized sound effects. **Hindi** and **SFX** have separate toggles. Every character reaction has a Devanagari Hindi translation, sent to an installed `hi-IN` (or other Hindi) voice. English/Hinglish captions stay readable independently and remain on when muted. Delayed voice lists are handled; while they load, the browser is asked for Hindi. If the installed list has no Hindi voice, the button explains this and captions remain available instead of using an English voice. Actual Hindi voice availability and pronunciation depend on the browser/device. No microphone permission or API key is requested.
 
 Dialogue has per-character cooldowns, recent-line avoidance and priority. The audio controller cancels stale utterances instead of building a queue. Pause, restart, role changes and quit stop speech. Switching tabs or losing window focus automatically pauses. Controls have visible focus states; help and invitations use native dialogs. Fullscreen is offered where supported.
 
 Only voice/SFX preferences are stored locally. No analytics, accounts, camera, microphone or location are used. Solo/local modes make no gameplay network requests. Online mode uses PeerJS Cloud to find the two peers, then WebRTC data channels carry state and controls directly or through the default TURN relay. The signaling/ICE services and the other peer can see connection metadata such as IP addresses.
+
+## Optional ElevenLabs audio
+
+ElevenLabs is **not configured** in this release; no API calls, credits or keys are required. Its Hindi text-to-speech could give the chor, inspector and five treasures distinct, consistent voices. Text-generated sound effects could add pressure-cooker whistles, chai-stall ambience and short victory stings. See the official [models](https://elevenlabs.io/docs/overview/models) and [sound-effects](https://elevenlabs.io/docs/overview/capabilities/sound-effects) documentation.
+
+For this finite dialogue pool, the recommended next step is to generate short Hindi clips ahead of time and bundle them in `dist/assets/audio`, retaining captions and native speech as fallbacks. This keeps chases responsive and needs no runtime API key. Dynamic personalized banter would instead need a server-side endpoint with a private key, caching and usage limits; a secret must never be shipped in `dist`. Audio generation and any account charges have not been enabled.
 
 ## Verify
 
@@ -126,7 +132,7 @@ npm run test:dom
 
 LinkeDOM is a development-only dependency. It is not needed to serve or deploy `dist`. The DOM harness drives the actual page modules through a two-player lobby, join link, readiness, guest controls, pause/resume, rematch, disconnect/rejoin and return to solo using test data channels. It does not emulate browser layout or native WebRTC.
 
-The **42 automated tests** cover all marked landmarks and courtyard gates, solid footprints, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration. Online tests cover room IDs, handshake, admission, disconnect/rejoin, timeouts, version mismatch, heartbeat, input expiry, snapshots, interpolation and a complete round over paired test channels.
+The **44 automated tests** cover all marked landmarks and courtyard gates, solid footprints, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, Hindi translation coverage, Hindi-only voice selection, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration. Online tests cover room IDs, handshake, admission, disconnect/rejoin, timeouts, version mismatch, heartbeat, input expiry, snapshots, interpolation and a complete round over paired test channels.
 
 Complete AI chor victories are simulated over four seeds at each difficulty with patrol traffic enabled. Cop victories are simulated against an idle chor. Canvas rendering was also checked with a raster Canvas implementation at full-map, desktop and 360 px phone widths.
 

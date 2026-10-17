@@ -22,13 +22,77 @@ export const LOOT_TYPES=[
 ];
 export const DISTRACTIONS=['A silent cupboard forever.','A lifetime of boring homework.','A one-way trip to the recycling bin.','You can carry my bag instead.','No snacks, no music, no attention.'];
 export const LINES={
-  pickup:['Aaja, mere saath.','Deal pakki. Ab chup rehna!','Maal mil gaya. Ab nikal!'],
-  bank:['Maal safe. Ab chai!','Ek aur. Gully still believes in me.','Delivery complete, boss!'],
+  pickup:['Aaja, mere saath.','Deal pakki. Ab chup rehna!','Loot mil gaya. Ab nikal!'],
+  bank:['Loot safe. Ab chai!','Ek aur. Gully still believes in me.','Delivery complete, boss!'],
   chase:['Ruk ja, samose ke saudagar!','Oye! Bag mein kya hai?','Gully watch, reporting for duty!'],
   escape:['Kidhar gaya?','Aaj phir chai wale ne bacha liya.','I will check the next lane.'],
   caught:['Pakad liya!','Chori ka plan thoda kaccha tha.','Thane mein chai milegi.'],
   neighbor:['Arre, phir shuru ho gaye!','Aaj ki gully news: full drama.','Chai thandi ho jayegi, beta!','Samosa sambhal ke!'],
   tea:['Ek cutting. Aur thodi invisibility.','Chai ke peeche chhup jao.','Main toh bas chai pee raha hoon.'],
-  victory:['Party toh banti hai!','Maal bhi safe. Mood bhi set.','Gully legend, reporting!']
+  victory:['Party toh banti hai!','Loot bhi safe. Mood bhi set.','Gully legend, reporting!']
 };
 export function speakerName(id){return id==='chor'?'Chor':id==='cop'?'Inspector':id==='neighbor'?'Neighbour':LOOT_TYPES.find(l=>l.id===id)?.name||'Gully';}
+
+export const SHARED_LINES={refusal:'That is not the deal I wanted!',agreement:['Deal! Keep your word and I will keep quiet.','Okay, partner. Let us get out of here.'],net:'Arre, net band karo!',quiet:'Good deal. Keeping it quiet.',waiting:'Still waiting for my promise…',copWin:'The gully is safe. Chai, anyone?'};
+
+/** Devanagari is sent to speech synthesis; readable captions stay independent. */
+export const SPOKEN_HI={
+  "I have had enough pressure. Take me somewhere peaceful.": "बहुत दबाव झेल लिया! मुझे किसी शांत जगह ले चलो।",
+  "Theek hai. Seeti band!": "ठीक है। सीटी बंद!",
+  "Main pressure mein hoon!": "मैं दबाव में हूँ!",
+  "Seeti baja doon kya?": "सीटी बजा दूँ क्या?",
+  "Gas toh band ki thi na?": "गैस तो बंद की थी ना?",
+  "A star like me deserves applause. What is your offer?": "मेरे जैसे सितारे के लिए तालियाँ तो बनती हैं! क्या दोगे मुझे?",
+  "Finally! An audience with taste.": "आख़िरकार! मेरी क़द्र करने वाले मिल गए।",
+  "Mera award kahan hai?": "मेरा पुरस्कार कहाँ है?",
+  "Applause, please!": "तालियाँ हो जाएँ!",
+  "Best supporting chor!": "सर्वश्रेष्ठ सहायक चोर!",
+  "A dry getaway? Not happening. Where is my chutney?": "बिना चटनी के भागेंगे? बिल्कुल नहीं! मेरी चटनी कहाँ है?",
+  "Chutney ke liye kuch bhi!": "चटनी के लिए कुछ भी!",
+  "Bhai, chutney toh le le!": "भाई, चटनी तो ले ले!",
+  "Thanda ho raha hoon!": "ठंडा हो रहा हूँ!",
+  "Mujhe kha mat lena!": "मुझे खा मत लेना!",
+  "I need a show of my own. Make me a star.": "मुझे अपना कार्यक्रम चाहिए। मुझे सितारा बना दो!",
+  "Exclusive deal. Going off-air!": "सौदा पक्का। प्रसारण बंद!",
+  "Breaking news! Chor in the gully!": "ताज़ा खबर! गली में चोर है!",
+  "Hello, hello! Mic testing!": "हेलो, हेलो! आवाज़ आ रही है?",
+  "Yeh hai gully radio!": "ये है गली का रेडियो!",
+  "I walk all day. Someone else can carry me for once.": "दिन भर मैं ही चलती हूँ। आज कोई मुझे भी उठाकर ले चले!",
+  "VIP passenger, coming through!": "ख़ास सवारी आ रही है, रास्ता दो!",
+  "Arey, dheere chalo!": "अरे, धीरे चलो!",
+  "VIP passenger hoon main!": "मैं ख़ास सवारी हूँ!",
+  "Meri jodi kidhar hai?": "मेरी जोड़ी कहाँ है?",
+  "Aaja, mere saath.": "आ जा, मेरे साथ।",
+  "Deal pakki. Ab chup rehna!": "सौदा पक्का। अब चुप रहना!",
+  "Loot mil gaya. Ab nikal!": "खज़ाना मिल गया। अब निकल!",
+  "Loot safe. Ab chai!": "खज़ाना सुरक्षित है। अब चाय!",
+  "Ek aur. Gully still believes in me.": "एक और सुरक्षित! गली को मुझ पर भरोसा है।",
+  "Delivery complete, boss!": "खज़ाना पहुँचा दिया, साहब!",
+  "Ruk ja, samose ke saudagar!": "रुक जा, समोसे के सौदागर!",
+  "Oye! Bag mein kya hai?": "ओए! थैले में क्या है?",
+  "Gully watch, reporting for duty!": "गली की पहरेदारी शुरू!",
+  "Kidhar gaya?": "किधर गया?",
+  "Aaj phir chai wale ne bacha liya.": "आज फिर चाय वाले ने बचा लिया।",
+  "I will check the next lane.": "अगली गली में देखता हूँ।",
+  "Pakad liya!": "पकड़ लिया!",
+  "Chori ka plan thoda kaccha tha.": "चोरी की योजना थोड़ी कच्ची थी।",
+  "Thane mein chai milegi.": "थाने में चाय मिलेगी।",
+  "Arre, phir shuru ho gaye!": "अरे, फिर शुरू हो गए!",
+  "Aaj ki gully news: full drama.": "आज की गली की खबर: पूरा नाटक!",
+  "Chai thandi ho jayegi, beta!": "चाय ठंडी हो जाएगी, बेटा!",
+  "Samosa sambhal ke!": "समोसा संभाल के!",
+  "Ek cutting. Aur thodi invisibility.": "एक कटिंग चाय। और थोड़ा अदृश्य होने का जादू!",
+  "Chai ke peeche chhup jao.": "चाय के पीछे छुप जाओ।",
+  "Main toh bas chai pee raha hoon.": "मैं तो बस चाय पी रहा हूँ।",
+  "Party toh banti hai!": "जश्न तो बनता है!",
+  "Loot bhi safe. Mood bhi set.": "खज़ाना भी सुरक्षित। मिज़ाज भी बढ़िया!",
+  "Gully legend, reporting!": "गली का उस्ताद हाज़िर है!",
+  "That is not the deal I wanted!": "ऐसा सौदा तो नहीं हुआ था!",
+  "Deal! Keep your word and I will keep quiet.": "सौदा पक्का! वादा निभाओ, मैं चुप रहूँगा।",
+  "Okay, partner. Let us get out of here.": "ठीक है, साथी। अब यहाँ से निकलें!",
+  "Arre, net band karo!": "अरे, ये जाल हटाओ!",
+  "Good deal. Keeping it quiet.": "अच्छा सौदा है। मैं चुप हूँ।",
+  "Still waiting for my promise…": "अपना वादा याद है ना?",
+  "The gully is safe. Chai, anyone?": "गली सुरक्षित है। कोई चाय पिएगा?"
+};
+export function hindiLine(text){return SPOKEN_HI[text]||(/[\u0900-\u097f]/.test(text)?text:null);}
