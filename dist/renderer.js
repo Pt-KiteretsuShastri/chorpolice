@@ -91,7 +91,7 @@ export class Renderer{
       const route=this.civilians[i];if(!route.length)continue;const step=(t*.6+i*9)%route.length,j=Math.floor(step),f=step-j,a=route[j],b=route[(j+1)%route.length];drawPasserby(c,a.x+(b.x-a.x)*f,a.y+(b.y-a.y)*f,t,i);
     }
     for(const a of ROOF_ACCESS){const pulse=.9+Math.sin(t*3)*.1;circle(c,a.ground.x,a.ground.y,11*pulse,'#f6d47a');circle(c,a.ground.x,a.ground.y,8,'#a46e37');line(c,a.ground.x-3,a.ground.y-5,a.ground.x-3,a.ground.y+5,'#fff0c1',1.5);line(c,a.ground.x+3,a.ground.y-5,a.ground.x+3,a.ground.y+5,'#fff0c1',1.5);for(let i=-3;i<5;i+=3)line(c,a.ground.x-3,a.ground.y+i,a.ground.x+3,a.ground.y+i,'#fff0c1',1.2);circle(c,a.roof.x,a.roof.y,8,'#efc66388');}
-    if(g.carried&&(g.role==='chor'||g.duo)){
+    if(g.carried&&(g.role==='chor'||(g.duo&&!g.online))){
       const start=g.chor.layer==='ground'?g.chor:ROOF_ACCESS.find(a=>a.buildingId===g.chor.roofId)?.ground||nearestGround(g.chor);
       const key=`${Math.floor(start.x/TILE)},${Math.floor(start.y/TILE)}`;if(this.homeRoute.key!==key)this.homeRoute={key,points:findPath(start,SAFE)};
       const points=[start,...this.homeRoute.points];c.save();c.lineJoin='round';c.strokeStyle='#386346aa';c.lineWidth=6;c.beginPath();points.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.stroke();c.strokeStyle='#f8fdd0';c.lineWidth=2.5;c.setLineDash([3,8]);c.lineDashOffset=-t*15;c.stroke();c.restore();
@@ -104,9 +104,9 @@ export class Renderer{
     for(const car of g.cars){let p=car;if(g.phase==='ready'){const route=car.route,step=(t*1.7+car.initialIndex)%route.length,j=Math.floor(step),f=step-j,a=route[j],b=route[(j+1)%route.length];p={...car,x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f,dir:Math.atan2(b.y-a.y,b.x-a.x)};}carSprite(c,p,t);}
     const actors=[g.cop,g.chor].sort((a,b)=>(a.layer==='ground'?0:1)-(b.layer==='ground'?0:1)||a.y-b.y);
     for(const a of actors){
-      if(a.kind==='chor'&&g.hidden){if(g.role==='cop'&&!g.duo)continue;c.save();c.globalAlpha=.38;drawActor(c,{...a,moving:false},t,'CHAI',g.carried);c.restore();text(c,'INVISIBLE',a.x,a.y-49,8,'#486e45');continue;}
+      if(a.kind==='chor'&&g.hidden){if(g.role==='cop'&&(!g.duo||g.online))continue;c.save();c.globalAlpha=.38;drawActor(c,{...a,moving:false},t,'CHAI',g.carried);c.restore();text(c,'INVISIBLE',a.x,a.y-49,8,'#486e45');continue;}
       const jump=a.jump?Math.sin(a.jump.t*Math.PI)*28:0,roof=a.layer==='roof'||a.jump?.targetLayer==='roof'?5:0;
-      drawActor(c,{...a,y:a.y-jump-roof},t,g.duo?(a.kind==='chor'?'P1':'P2'):a.kind==='chor'?'CHOR':'COP',a.kind==='chor'?g.carried:null);
+      drawActor(c,{...a,y:a.y-jump-roof},t,g.online?(a.kind===g.role?'YOU':a.kind.toUpperCase()):g.duo?(a.kind==='chor'?'P1':'P2'):a.kind==='chor'?'CHOR':'COP',a.kind==='chor'?g.carried:null);
       if(a.kind==='cop'){box(c,a.x-24,a.y-57,48,13,a.state==='chase'?'#ab664c':'#496c61',4);text(c,a.state.toUpperCase(),a.x,a.y-50,7,'#fff2cd');}
     }
     if(g.netVisual>0){c.save();c.translate(g.cop.x,g.cop.y);c.rotate(g.cop.dir);c.strokeStyle='#506c54aa';c.lineWidth=2;for(let i=-30;i<=30;i+=10){line(c,20,i,85,i*.4,'#506c54aa',1);line(c,25+i*.4,-29,25+i*.4,29,'#506c54aa',1);}c.restore();}
@@ -115,7 +115,7 @@ export class Renderer{
     // Bubbles are screen-sized so dialogue stays legible while zoomed out.
     for(const bubble of g.speech.slice(-2)){
       const who=bubble.who,a=bubble.anchor||(who==='chor'?g.chor:who==='cop'?g.cop:g.loot.find(l=>l.id===who)||{x:336,y:560});
-      if(who==='chor'&&g.hidden&&g.role==='cop'&&!g.duo)continue;
+      if((who==='chor'||who===g.carried?.id)&&g.hidden&&g.role==='cop'&&(!g.duo||g.online))continue;
       const p=cam.project(a,w);if(p.x<-30||p.x>w+30||p.y<-30||p.y>h+30)continue;
       const max=Math.min(240,w-36),words=bubble.text.split(' '),lines=[''];c.font='600 11px Arial, sans-serif';
       for(const word of words){const i=lines.length-1,trial=`${lines[i]} ${word}`.trim();if(c.measureText(trial).width>max-22&&lines[i])lines.push(word);else lines[i]=trial;}
@@ -129,7 +129,7 @@ export class Renderer{
     box(c,x-4,y-4,mw+8,mh+8,'#fff4dce8',6);c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='#dfd2ae';c.fillRect(0,0,WIDTH,HEIGHT);
     for(let yy=0;yy<GRID.length;yy++)for(let xx=0;xx<GRID[0].length;xx++)if(GRID[yy][xx])box(c,xx*TILE,yy*TILE,TILE,TILE,'#83917a');
     circle(c,SAFE.x,SAFE.y,28,'#287c4c');g.loot.forEach((l,i)=>{if(l.state!=='ground')return;circle(c,l.x,l.y,24,'#f3bb4e');text(c,String(i+1),l.x,l.y,49,'#304a3a');});
-    if(!g.hidden||g.role==='chor'||g.duo)circle(c,g.chor.x,g.chor.y,26,'#2a523c');circle(c,g.cop.x,g.cop.y,26,'#426f96');
+    if(!g.hidden||g.role==='chor'||(g.duo&&!g.online))circle(c,g.chor.x,g.chor.y,26,'#2a523c');circle(c,g.cop.x,g.cop.y,26,'#426f96');
     c.strokeStyle='#fffbd7';c.lineWidth=10;c.strokeRect(cam.x,cam.y,cam.w,cam.h);c.restore();text(c,'M · OVERVIEW',x+mw/2,y-11,8,'#3d5e48');
   }
 }

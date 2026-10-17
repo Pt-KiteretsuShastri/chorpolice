@@ -9,7 +9,7 @@ export class Camera{
     let w,cx,cy;
     if(overview||game.phase==='ready'){
       w=fullWidth;cx=WIDTH/2;cy=HEIGHT/2;
-    }else if(game.duo){
+    }else if(game.duo&&!game.online){
       w=Math.min(fullWidth,Math.max(base,Math.abs(game.chor.x-game.cop.x)+240,(Math.abs(game.chor.y-game.cop.y)+240)*aspect));
       cx=(game.chor.x+game.cop.x)/2;cy=(game.chor.y+game.cop.y)/2;
     }else{w=Math.min(base,fullWidth);const a=game.role==='cop'?game.cop:game.chor;cx=a.x;cy=a.y;}

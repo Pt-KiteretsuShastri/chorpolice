@@ -38,7 +38,7 @@ export class Game{
   }
   get hidden(){return !!this.chor.seated;}
   get catchable(){return !this.hidden&&this.chor.layer==='ground'&&!this.chor.jump&&this.chor.invuln<=0;}
-  start(){if(this.phase!=='ready')return;this.phase='playing';this.emit('start',this.duo?'P1 is chor. P2 is cop. The gully is yours.':this.role==='chor'?'Convince three treasures, then bank them at the green safehouse.':'Tag the chor three times. Patrol cars are on your side.');this.say('neighbor',LINES.neighbor,{priority:1});}
+  start(){if(this.phase!=='ready')return;this.phase='playing';this.emit('start',this.online?'Online round started. Chor delivers; cop catches.':this.duo?'P1 is chor. P2 is cop. The gully is yours.':this.role==='chor'?'Convince three treasures, then bank them at the green safehouse.':'Tag the chor three times. Patrol cars are on your side.');this.say('neighbor',LINES.neighbor,{priority:1});}
   emit(type,text,extra={}){this.events.push({type,text,...extra});}
   drainEvents(){return this.events.splice(0);}
   say(who,lines,{priority=1,anchor=null,hi=null}={}){

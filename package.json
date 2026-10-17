@@ -1,16 +1,20 @@
 {
   "name": "gully-chase",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "A joyful neighbourhood chase with unusually opinionated loot.",
   "scripts": {
     "start": "python3 -m http.server 8080 --directory dist",
     "test": "node --test tests/*.test.js",
-    "check": "node --check dist/world.js && node --check dist/random.js && node --check dist/dialogue.js && node --check dist/engine.js && node --check dist/world-art.js && node --check dist/renderer.js && node --check dist/camera.js && node --check dist/audio.js && node --check dist/input.js && node --check dist/app.js"
+    "check": "node --check dist/world.js && node --check dist/random.js && node --check dist/dialogue.js && node --check dist/engine.js && node --check dist/world-art.js && node --check dist/renderer.js && node --check dist/camera.js && node --check dist/audio.js && node --check dist/input.js && node --check dist/app.js && node --check dist/net-state.js && node --check dist/online-room.js",
+    "test:dom": "node --experimental-vm-modules tests/dom-flow.mjs"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/Pt-KiteretsuShastri/chorpolice.git"
+  },
+  "devDependencies": {
+    "linkedom": "0.18.12"
   }
 }

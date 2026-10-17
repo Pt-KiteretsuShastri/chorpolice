@@ -1,8 +1,3 @@
 node_modules/
-.DS_Store
 *.log
-.openai/
-coverage/
-.vercel/
-.env
-.env.*
+.DS_Store

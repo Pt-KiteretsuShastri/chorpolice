@@ -1,0 +1,45 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';import {EventEmitter} from 'node:events';
+import {OnlineRoom,roomId,roomLink,roomInURL,validRoom} from '../dist/online-room.js';
+import {HostControls,RemoteView,snapshot,validSnapshot,applySnapshot,PROTOCOL} from '../dist/net-state.js';
+import {Game} from '../dist/engine.js';import {P,SAFE,CHOR_SPAWN,distance,walkable} from '../dist/world.js';import {Camera} from '../dist/camera.js';
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+function harness(){
+  const peers=new Map();let next=0;
+  class Connection extends EventEmitter{constructor(metadata){super();this.metadata=metadata;this.open=false;}send(message){if(!this.open)throw Error('closed');const copy=JSON.parse(JSON.stringify(message));queueMicrotask(()=>{if(this.other.open)this.other.emit('data',copy);});}close(){if(!this.open)return;this.open=false;this.emit('close');if(this.other.open){this.other.open=false;this.other.emit('close');}}}
+  class Peer extends EventEmitter{constructor(id){super();this.id=id||`guest-${++next}`;queueMicrotask(()=>{if(peers.has(this.id)){this.emit('error',{type:'unavailable-id'});return;}peers.set(this.id,this);this.emit('open',this.id);});}connect(id,options){const a=new Connection(options.metadata),b=new Connection(options.metadata);a.other=b;b.other=a;this.conn=a;queueMicrotask(()=>{const remote=peers.get(id);if(!remote){this.emit('error',{type:'peer-unavailable'});return;}remote.emit('connection',b);a.open=b.open=true;a.emit('open');b.emit('open');});return a;}reconnect(){}destroy(){peers.delete(this.id);this.conn?.close();}}
+  return{Peer,peers};
+}
+const id='gully-0123456789abcdef01234567';
+test('room IDs have 96 bits of entropy and links preserve the deployment subpath',()=>{
+  assert.match(roomId(),/^gully-[0-9a-f]{24}$/);assert.notEqual(roomId(),roomId());assert.equal(validRoom('other-room'),false);const link=roomLink('https://example.test/play/?seed=1#old',id,42);assert.equal(roomInURL(link),id);assert.equal(new URL(link).pathname,'/play/');assert.equal(new URL(link).searchParams.get('seed'),'42');assert.equal(new URL(link).hash,'');assert.equal(roomInURL('https://example.test/?room=<script>'),null);assert.throws(()=>roomLink('https://example.test/','bad',1));
+});
+test('two peers complete a version handshake and exchange data; a third player is rejected',async()=>{
+  const {Peer}=harness(),messages=[];const a=new OnlineRoom({PeerClass:Peer,onMessage:m=>messages.push(m)}),b=new OnlineRoom({PeerClass:Peer});a.host(id);await flush();assert.equal(a.state,'waiting');b.join(id);await flush();assert.equal(a.connected,true);assert.equal(b.connected,true);b.send('ready',{round:1});await flush();assert.equal(messages[0].type,'ready');const third=new OnlineRoom({PeerClass:Peer});third.join(id);await flush();assert.equal(third.state,'error');assert.equal(a.connected,true);a.close();b.close();third.close();
+});
+test('disconnects pause the room contract and the guest can rejoin the same host',async()=>{
+  const {Peer}=harness(),states=[];const host=new OnlineRoom({PeerClass:Peer,onState:s=>states.push(s)}),guest=new OnlineRoom({PeerClass:Peer});host.host(id);await flush();guest.join(id);await flush();guest.close();await flush();assert.equal(host.state,'waiting');assert.equal(host.connected,false);const replacement=new OnlineRoom({PeerClass:Peer});replacement.join(id);await flush();assert.equal(host.connected,true);assert.equal(replacement.connected,true);assert.ok(states.includes('waiting'));host.close();replacement.close();
+});
+test('unavailable rooms, missing support, version mismatch and timeouts fail clearly',async()=>{
+  const {Peer}=harness();const missing=new OnlineRoom({PeerClass:Peer});missing.join(id);await flush();assert.equal(missing.state,'error');const unsupported=new OnlineRoom({PeerClass:null});assert.throws(()=>unsupported.host(id),/support could not load/);let now=0;class SilentPeer extends EventEmitter{destroy(){}}const timed=new OnlineRoom({PeerClass:SilentPeer,now:()=>now});timed.host(id);now=21000;timed.update();assert.equal(timed.state,'error');
+  const host=new OnlineRoom({PeerClass:Peer}),guest=new OnlineRoom({PeerClass:Peer});host.host(id);await flush();guest.join(id);await flush();guest.raw({type:'hello',protocol:'old-version',host:false});await flush();assert.equal(host.state,'error');guest.close();missing.close();timed.close();
+});
+test('heartbeat tracks latency and freezes a silently broken connection',async()=>{
+  const {Peer}=harness();let now=0;const a=new OnlineRoom({PeerClass:Peer,now:()=>now}),b=new OnlineRoom({PeerClass:Peer,now:()=>now});a.host(id);await flush();b.join(id);await flush();now=1100;a.update();await flush();assert.equal(a.ping,0);now=10000;a.update();assert.equal(a.connected,false);assert.equal(a.state,'waiting');a.close();b.close();
+});
+test('host accepts bounded fresh controls, expires held keys and rejects guest state changes',()=>{
+  const h=new HostControls(2),g=new Game({seed:42,duo:true});g.start();assert.equal(h.accept({round:2,seq:1,input:{x:1,y:-1,sprint:true}},0),true);assert.equal(h.current(100).x,1);assert.equal(h.current(301).x,0);for(const input of [{x:NaN,y:0},{x:100,y:0},{x:0,y:Infinity}])assert.equal(h.accept({round:2,seq:2,input},0),false);assert.equal(h.accept({round:1,seq:50,input:{x:1,y:0}},0),false);assert.equal(h.accept({round:2,seq:1,input:{x:1,y:0}},0),false);assert.equal(h.action({round:2,seq:1,action:'bank',banked:3},g),false);assert.equal(g.banked,0);assert.equal(h.action({round:2,seq:1,action:'net'},g),true);g.netCooldown=0;assert.equal(h.action({round:2,seq:1,action:'net'},g),false);h.reset(3);assert.equal(h.current(0).x,0);
+});
+test('snapshots preserve both actors, loot identity, events, tea hiding, rooftops and pause',()=>{
+  const host=new Game({seed:2401,duo:true}),guest=new Game({seed:1});host.online=true;host.start();host.chor.seated='west-seat';host.chor.layer='roof';host.chor.roofId='chai';host.phase='paused';host.activeEvent={type:'chai',end:40};const s=snapshot(host,3);assert.ok(validSnapshot(s));assert.equal(applySnapshot(guest,s),true);assert.equal(guest.phase,'paused');assert.equal(guest.online,true);assert.equal(guest.role,'cop');assert.equal(guest.hidden,true);assert.equal(guest.chor.layer,'roof');assert.equal(guest.activeEvent.type,'chai');assert.deepEqual(guest.loot.map(l=>l.id),host.loot.map(l=>l.id));assert.ok(guest.cars[0].route.length);s.chor.x=NaN;assert.equal(applySnapshot(guest,s),false);
+});
+test('remote interpolation ignores stale packets and resets on rematch or respawn',()=>{
+  const g=new Game({seed:1}),host=new Game({seed:1,duo:true}),view=new RemoteView();host.chor.x=400;const s=snapshot(host,1);assert.ok(view.accept(g,s,0,0));view.interpolate(g,25);assert.equal(g.chor.x,400);host.chor.x=420;assert.ok(view.accept(g,snapshot(host,1),1,50));view.interpolate(g,75);assert.equal(g.chor.x,410);assert.equal(view.accept(g,s,0,80),false);host.chor.x=900;view.accept(g,snapshot(host,1),2,100);view.interpolate(g,100);assert.equal(g.chor.x,900);host.chor.x=250;view.accept(g,snapshot(host,2),0,150);view.interpolate(g,150);assert.equal(g.chor.x,250);assert.equal(view.accept(g,snapshot(host,1),99,160),false);
+});
+test('online cameras follow the local role instead of exposing both players or hidden chor routes',()=>{
+  const g=new Game({seed:1,duo:true});g.start();g.online=true;g.role='cop';g.cop.x=1160;g.cop.y=220;g.chor.x=240;g.chor.y=740;const c=new Camera();c.update(g,1.7,.016);assert.ok(c.x>200);assert.ok(c.w<1280);g.role='chor';c.reset();c.update(g,1.7,.016);assert.ok(c.x<150);
+});
+test('two connected peers share an authoritative complete round and the next lobby state',async()=>{
+  const {Peer}=harness(),game=new Game({seed:42,duo:true,traffic:false}),guestGame=new Game({seed:1}),inputs=new HostControls(),view=new RemoteView();let round=1,seq=0,now=0;const host=new OnlineRoom({PeerClass:Peer,onMessage:m=>{if(m.type==='input')inputs.accept(m,now);if(m.type==='action')inputs.action(m,game);}}),guest=new OnlineRoom({PeerClass:Peer,onMessage:m=>{if(m.type==='state')view.accept(guestGame,m.state,m.seq,now);}});host.host(id);await flush();guest.join(id);await flush();game.start();Object.assign(game.cop,P(490,500));guest.send('input',{round,seq:1,input:{x:0,y:1,sprint:true}});await flush();const oldY=game.cop.y;for(let i=0;i<12;i++){now+=16;game.update(.016,{cop:inputs.current(now)});}assert.ok(game.cop.y>oldY);assert.ok(walkable(game.cop.x,game.cop.y));
+  for(const loot of game.loot){Object.assign(game.chor,{x:loot.x,y:loot.y});game.action('interact');assert.ok(game.negotiation);game.answer(game.negotiation.choices.findIndex(c=>c.correct));Object.assign(game.chor,SAFE);game.action('interact');host.send('state',{seq:++seq,state:snapshot(game,round)});await flush();assert.equal(guestGame.banked,game.banked);}
+  assert.equal(guestGame.winner,'chor');assert.equal(guestGame.phase,'ended');const rematch=new Game({seed:43,duo:true});host.send('state',{seq:0,state:snapshot(rematch,++round)});await flush();assert.equal(guestGame.phase,'ready');assert.equal(guestGame.banked,0);host.close();guest.close();
+});
