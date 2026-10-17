@@ -1,76 +1,79 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {Game,GRID,COLS,ROWS,TILE,LOOT_TYPES,SAFE,STATION,walkable,findPath,lineOfSight,distance} from '../dist/engine.js';
-import {Renderer} from '../dist/renderer.js';
+import {Game,SAFE,STATION,walkable,findPath,lineOfSight,distance,TEA_SPOTS,ROOF_ACCESS,LOOT_TYPES} from '../dist/engine.js';
+import {roofAt,BUILDINGS} from '../dist/world.js';
+import {movement,actionFor} from '../dist/input.js';
 
-function tick(g,seconds,input={}){for(let i=0;i<seconds*60;i++)g.update(1/60,input);}
-function pick(g,index=0){g.chor.x=g.loot[index].x;g.chor.y=g.loot[index].y;g.action('interact');}
-function bank(g){g.chor.x=SAFE.x;g.chor.y=SAFE.y;g.action('interact');}
+function tick(g,seconds,input={}){for(let i=0;i<Math.ceil(seconds*60);i++)g.update(1/60,input);}
+function fresh(options={}){const g=new Game({seed:47,duo:true,traffic:false,...options});g.start();return g;}
+function position(a,p){a.x=p.x;a.y=p.y;}
+function agree(g){assert.ok(g.negotiation);assert.ok(g.answer(g.negotiation.choices.findIndex(c=>c.correct)));}
+function pick(g,index=0){position(g.chor,g.loot[index]);g.action('interact');assert.equal(g.carried,null);agree(g);}
+function bank(g){position(g.chor,SAFE);g.action('interact');}
 
-test('every street tile connects to the safehouse; all landmarks are reachable',()=>{
-  let streets=0;
-  for(let y=1;y<ROWS-1;y++)for(let x=1;x<COLS-1;x++)if(GRID[y][x]===0){streets++;assert.ok(findPath(SAFE,{x:(x+.5)*TILE,y:(y+.5)*TILE}).length,`Unreachable tile ${x},${y}`);}
-  assert.ok(streets>300);
-  for(const p of [SAFE,STATION,...LOOT_TYPES]){assert.ok(walkable(p.x,p.y));assert.ok(findPath(SAFE,p).length);}
-});
 test('movement collides with buildings and never exits the map',()=>{
-  const g=new Game({duo:true});g.start();g.chor.x=80;g.chor.y=144;
-  tick(g,1,{chor:{x:1}});assert.ok(g.chor.x<96);assert.ok(walkable(g.chor.x,g.chor.y));
-  tick(g,6,{chor:{x:-1,sprint:true}});assert.ok(g.chor.x>=42);assert.ok(walkable(g.chor.x,g.chor.y));
-  assert.equal(walkable(NaN,0),false);assert.equal(lineOfSight({x:80,y:144},{x:300,y:144}),false);
+  const g=fresh();position(g.chor,{x:80,y:144});tick(g,1,{chor:{x:1}});assert.ok(g.chor.x<86);assert.ok(walkable(g.chor.x,g.chor.y));tick(g,6,{chor:{x:-1,sprint:true}});assert.ok(g.chor.x>=42);assert.ok(walkable(g.chor.x,g.chor.y));assert.equal(walkable(NaN,0),false);assert.equal(lineOfSight({x:80,y:144},{x:300,y:144}),false);
 });
-test('the parked auto blocks movement while routes can go around it',()=>{
-  const g=new Game({duo:true});g.start();g.chor.x=848;g.chor.y=384;
-  tick(g,.5,{chor:{x:1}});assert.ok(g.chor.x<864-9,'Actor walked into the parked auto');
-  const path=findPath({x:848,y:384},{x:912,y:384});assert.ok(path.length>3);
-  for(const p of path)assert.ok(walkable(p.x,p.y),'Route clips a solid prop');
-  assert.ok(path.some(p=>p.y<352||p.y>416),'Route should detour around the car');
+test('collect, persuade, drop, collect again and bank all three treasures',()=>{
+  const g=fresh();pick(g);const id=g.carried.id;assert.equal(g.carried.trust,1);g.carried.trust=.1;g.action('persuade');agree(g);assert.equal(g.carried.trust,1);g.action('drop');assert.equal(g.carried,null);assert.equal(g.loot.find(l=>l.id===id).state,'ground');g.action('interact');agree(g);bank(g);assert.equal(g.banked,1);pick(g,1);bank(g);pick(g,2);bank(g);assert.equal(g.phase,'ended');assert.equal(g.winner,'chor');assert.equal(g.banked,3);
 });
-test('collect, hush, drop, collect again, bank all treasures, and win',()=>{
-  const g=new Game({duo:true});g.start();pick(g);assert.equal(g.carried.id,'cooker');
-  g.action('hush');assert.equal(g.hushed,5);assert.equal(g.chor.energy,75);
-  g.action('drop');assert.equal(g.carried,null);assert.equal(g.loot[0].state,'ground');
-  g.action('interact');bank(g);assert.equal(g.banked,1);assert.equal(g.carried,null);
-  pick(g,1);bank(g);pick(g,2);bank(g);
-  assert.equal(g.phase,'ended');assert.equal(g.winner,'chor');assert.equal(g.banked,3);
+test('wrong offers make noise, have a cooldown, and allow a correct retry',()=>{
+  const g=fresh();position(g.chor,g.loot[0]);position(g.cop,{x:g.chor.x+50,y:g.chor.y});g.action('interact');const wrong=g.negotiation.choices.findIndex(c=>!c.correct);assert.equal(g.answer(wrong),false);assert.equal(g.carried,null);assert.ok(g.lastNoise);assert.ok(g.rings.length);assert.equal(g.answer(g.negotiation.choices.findIndex(c=>c.correct)),false);position(g.cop,STATION);tick(g,.85);agree(g);assert.ok(g.carried);
 });
-test('noise reveals a carried treasure and hush suppresses it',()=>{
-  const g=new Game({duo:true});g.start();pick(g);g.cop.x=200;g.cop.y=320;
-  g.chatter=.05;g.action('hush');tick(g,.3);assert.equal(g.rings.length,0);assert.equal(g.lastNoise,null);
-  g.hushed=0;tick(g,.05);assert.ok(g.rings.length>0);assert.ok(g.lastNoise);assert.ok(g.alert>0);
+test('walking away cancels an unfinished conversation',()=>{
+  const g=fresh();position(g.chor,g.loot[0]);g.action('interact');position(g.chor,SAFE);g.update(.01);assert.equal(g.negotiation,null);assert.equal(g.answer(0),false);assert.equal(g.carried,null);
 });
-test('tags return loot, give respawn protection, and end after three catches',()=>{
-  const g=new Game({duo:true});g.start();pick(g);g.tag();assert.equal(g.catches,1);assert.equal(g.carried,null);assert.equal(g.loot[0].state,'ground');assert.ok(g.chor.invuln>0);
-  g.tag();assert.equal(g.catches,1);
-  g.chor.invuln=0;g.tag();g.chor.invuln=0;g.tag();assert.equal(g.winner,'cop');assert.equal(g.reason,'three-catches');
+test('low-trust loot reveals the chor; a fresh agreement suppresses noise',()=>{
+  const g=fresh();pick(g);position(g.chor,{x:336,y:400});position(g.cop,{x:336,y:475});g.carried.trust=0;g.chatter=.01;tick(g,.05);assert.ok(g.lastNoise);assert.ok(g.alert>0);const n=g.stats.noise;g.action('persuade');agree(g);g.chatter=.01;tick(g,.1);assert.equal(g.stats.noise,n);
 });
-test('nets need range and sight, immobilize the chor, and have a cooldown',()=>{
-  const g=new Game({duo:true});g.start();g.cop.x=80;g.cop.y=250;g.chor.x=130;g.chor.y=250;
-  g.action('net');assert.equal(g.chor.stun,1.7);assert.equal(g.netCooldown,5);
-  g.action('net');assert.equal(g.netCooldown,5);
-  const x=g.chor.x;g.update(.05,{chor:{x:1}});assert.equal(g.chor.x,x);
-  g.chor.stun=0;g.netCooldown=0;g.chor.x=800;g.action('net');assert.equal(g.chor.stun,0);
+test('tags return loot, grant respawn protection and end after three catches',()=>{
+  const g=fresh();pick(g);const l=g.carried;g.tag();assert.equal(g.catches,1);assert.equal(g.carried,null);assert.equal(l.state,'ground');assert.deepEqual({x:l.x,y:l.y},l.origin);assert.ok(g.chor.invuln>0);g.tag();assert.equal(g.catches,1);g.chor.invuln=0;g.tag();g.chor.invuln=0;g.tag();assert.equal(g.winner,'cop');assert.equal(g.reason,'three-catches');
 });
-test('paused state freezes timer, physics, and actions; timeout awards police',()=>{
-  const g=new Game({duo:true});g.start();g.phase='paused';tick(g,5,{chor:{x:1}});assert.equal(g.remaining,120);assert.equal(g.chor.x,SAFE.x);g.action('net');assert.equal(g.netCooldown,0);
-  g.phase='playing';g.elapsed=119.99;g.update(.05);assert.equal(g.phase,'ended');assert.equal(g.winner,'cop');assert.equal(g.reason,'timeout');
+test('nets need range and sight, immobilize the chor and have a cooldown',()=>{
+  const g=fresh();position(g.cop,{x:80,y:250});position(g.chor,{x:130,y:250});g.action('net');assert.equal(g.chor.stun,1.5);assert.equal(g.netCooldown,5);g.action('net');assert.equal(g.netCooldown,5);const x=g.chor.x;g.update(.05,{chor:{x:1}});assert.equal(g.chor.x,x);g.chor.stun=0;g.netCooldown=0;g.chor.x=800;g.action('net');assert.equal(g.chor.stun,0);
+});
+test('pause freezes timer, physics, cars, events and actions; timeout awards police',()=>{
+  const g=fresh({traffic:true});g.phase='paused';const c={x:g.cars[0].x,y:g.cars[0].y};tick(g,5,{chor:{x:1}});assert.equal(g.remaining,120);assert.equal(g.chor.x,SAFE.x);assert.deepEqual({x:g.cars[0].x,y:g.cars[0].y},c);g.action('net');assert.equal(g.netCooldown,0);g.phase='playing';g.elapsed=119.99;g.update(.05);assert.equal(g.winner,'cop');assert.equal(g.reason,'timeout');
 });
 test('sprint consumes energy and chai restores it',()=>{
-  const g=new Game({duo:true});g.start();g.chor.x=400;g.chor.y=240;tick(g,.5,{chor:{x:1,sprint:true}});assert.ok(g.chor.energy<90);
-  g.chor.x=g.chai[0].x;g.chor.y=g.chai[0].y;g.chor.energy=30;g.update(.01);assert.equal(g.chor.energy,100);assert.ok(g.chai[0].cooldown>0);
+  const g=fresh();position(g.chor,{x:400,y:272});tick(g,.5,{chor:{x:1,sprint:true}});assert.ok(g.chor.energy<90);position(g.chor,g.chai[0]);g.chor.energy=30;g.update(.01);assert.equal(g.chor.energy,100);assert.ok(g.chai[0].cooldown>0);
 });
-test('AI chor can complete a full round around buildings against an idle human cop',()=>{
-  const g=new Game({role:'cop'});g.start();tick(g,100);
-  assert.equal(g.phase,'ended',`AI got stuck at ${g.chor.x},${g.chor.y}; banked ${g.banked}`);assert.equal(g.winner,'chor');assert.equal(g.banked,3);
+test('rooftop jumps climb, cross a gap, collide with roof edges and descend',()=>{
+  const g=fresh(),access=ROOF_ACCESS.find(a=>a.buildingId==='library');position(g.chor,access.ground);g.action('jump');assert.equal(g.chor.layer,'air');assert.equal(g.chor.energy,82);tick(g,.5);assert.equal(g.chor.layer,'roof');assert.equal(g.chor.roofId,'library');assert.ok(roofAt(g.chor.x,g.chor.y));tick(g,1.2,{chor:{x:1}});const b=BUILDINGS.find(b=>b.id==='library');assert.ok(g.chor.x<=32*(b.x+b.w)-13);g.action('jump');tick(g,.5);assert.equal(g.chor.roofId,'samosa');assert.equal(g.chor.layer,'roof');const exit=ROOF_ACCESS.find(a=>a.buildingId==='samosa');position(g.chor,exit.roof);tick(g,.7);g.action('jump');tick(g,.5);assert.equal(g.chor.layer,'ground');assert.ok(walkable(g.chor.x,g.chor.y));assert.equal(g.stats.jumps,3);
 });
-test('AI police moves, follows lanes, and reaches a stationary chor',()=>{
-  const g=new Game({role:'chor',difficulty:'hard'});g.start();const start={x:g.cop.x,y:g.cop.y};tick(g,100);
-  assert.ok(distance(start,g.cop)>100);assert.ok(g.catches>0);assert.ok(walkable(g.cop.x,g.cop.y));
+test('roof loot drops onto reachable ground and nets cannot catch a rooftop chor',()=>{
+  const g=fresh();pick(g);const a=ROOF_ACCESS[0];position(g.chor,a.ground);g.action('jump');tick(g,.5);position(g.cop,g.chor);g.action('net');assert.equal(g.chor.stun,0);assert.equal(g.tag(),false);g.action('drop');const l=g.loot.find(l=>l.state==='ground'&&l.trust===0&&l.x!==l.origin.x);assert.ok(l);assert.ok(walkable(l.x,l.y));assert.ok(findPath(SAFE,l).length);
 });
-test('renderer draws a map immediately, before starting a round',()=>{
-  let draws=0,shapes=0;
-  const ctx=new Proxy({createRadialGradient:()=>({addColorStop(){}}),measureText:t=>({width:t.length*6})},{get:(o,k)=>k in o?o[k]:(...args)=>{if(k==='drawImage')draws++;if(k==='fill')shapes++;},set:(o,k,v)=>(o[k]=v,true)});
-  const canvas=()=>({width:960,height:640,getContext:()=>ctx});const r=new Renderer(canvas(),canvas);
-  assert.ok(shapes>500,'Map geometry was not painted');r.resize(480,320,2);r.render(new Game(),0);assert.equal(draws,1);
-  const g=new Game();g.start();pick(g);g.say('chor','Test loot');g.action('net');r.render(g,1);assert.equal(draws,2);
+test('tea camouflage blocks movement, sight, nets, patrol tags and catches while time runs',()=>{
+  const g=fresh({duo:false,role:'chor',traffic:true});position(g.chor,TEA_SPOTS[0]);g.action('interact');assert.ok(g.hidden);position(g.cop,g.chor);g.chor.energy=20;tick(g,3,{chor:{x:1,sprint:true}});g.action('net');g.tag('patrol');assert.equal(g.chor.stun,0);assert.equal(g.catches,0);assert.equal(g.chor.x,TEA_SPOTS[0].x);assert.ok(g.remaining<118);assert.ok(g.chor.energy>20);assert.equal(g.cop.state,'patrol');assert.equal(g.lastNoise,null);g.action('jump');assert.equal(g.chor.layer,'ground');g.action('interact');assert.equal(g.hidden,false);assert.ok(g.chor.invuln>0);g.elapsed=119.99;g.action('interact');g.update(.05);assert.equal(g.winner,'cop');
+});
+test('patrol cars follow navigable circuits and radio a sustained sighting',()=>{
+  const g=fresh({traffic:true});const car=g.cars[0],start={x:car.x,y:car.y};for(let i=0;i<1200;i++){g.updateCars(1/60,false);for(const p of g.cars)assert.ok(walkable(p.x,p.y,8));}assert.ok(distance(start,car)>100);car.route=[{x:336,y:400},{x:336,y:480}];car.index=0;position(car,{x:336,y:400});car.dir=Math.PI/2;position(g.chor,{x:336,y:500});for(let i=0;i<50;i++)g.updateCars(1/60);assert.ok(g.lastNoise);assert.ok(g.alert>0);assert.ok(car.radioCooldown>0);
+});
+test('police AI reads patrol, noise investigation, sight chase, loss and decoys',()=>{
+  const g=fresh({duo:false});position(g.cop,{x:336,y:400});position(g.chor,{x:336,y:480});g.aiCop(.01);assert.equal(g.cop.state,'chase');position(g.chor,{x:80,y:696});g.aiCop(.01);assert.equal(g.cop.state,'investigate');g.alert=0;g.aiCop(.01);assert.equal(g.cop.state,'patrol');g.noise({x:336,y:440});g.aiCop(.01);assert.equal(g.cop.state,'investigate');
+});
+test('all event types telegraph, activate meaningfully, and clean up',()=>{
+  for(const type of ['chai','sprint','decoy']){
+    const g=fresh();g.eventPlan=[{type,start:10,duration:12,announced:false,started:false,done:false}];g.elapsed=6;g.eventStep();assert.equal(g.eventBanner.stage,'soon');g.elapsed=10;g.eventStep();assert.equal(g.activeEvent.type,type);assert.equal(g.eventBanner.stage,'active');
+    if(type==='chai')assert.equal(g.chai.filter(p=>p.temporary).length,3);
+    if(type==='sprint'){assert.equal(g.boosts.length,2);position(g.chor,g.boosts[0]);g.update(.01);assert.ok(g.boostTime>6);assert.equal(g.boosts[0].active,false);}
+    if(type==='decoy'){assert.ok(g.decoy);assert.deepEqual(g.lastNoise,{x:g.decoy.x,y:g.decoy.y});assert.ok(g.alert>0);}
+    g.elapsed=22;g.eventStep();assert.equal(g.activeEvent,null);assert.equal(g.eventBanner,null);assert.equal(g.chai.filter(p=>p.temporary).length,0);assert.equal(g.boosts.length,0);assert.equal(g.decoy,null);
+  }
+});
+test('finish and new rounds clear temporary event state and unfinished negotiations',()=>{
+  const g=fresh();g.eventPlan=[{type:'chai',start:0,duration:12}];g.eventStep();position(g.chor,g.loot[0]);g.action('interact');assert.ok(g.negotiation);g.finish('cop','timeout');assert.equal(g.negotiation,null);assert.equal(g.activeEvent,null);assert.equal(g.chai.filter(p=>p.temporary).length,0);const next=new Game({seed:g.seed,previous:g.signature});assert.notEqual(next.signature,g.signature);assert.equal(next.events.length,0);assert.equal(next.banked,0);assert.equal(next.catches,0);assert.equal(next.phase,'ready');
+});
+test('AI chor completes whole rounds on the larger map across seeds and difficulties',()=>{
+  for(const difficulty of ['easy','normal','hard'])for(const seed of [1,42,2401,65535]){const g=fresh({duo:false,role:'cop',difficulty,seed,traffic:true});tick(g,120);assert.equal(g.winner,'chor',`seed=${seed} ${difficulty}: ${g.banked} banked at ${g.chor.x},${g.chor.y}`);assert.equal(g.banked,3);assert.ok(g.elapsed<105,'Deliveries exceed fair travel budget');}
+});
+test('AI police follows lanes, finds the idle chor and completes a cop victory',()=>{
+  const g=fresh({duo:false,role:'chor',difficulty:'hard',traffic:true}),start={...g.cop};tick(g,120);assert.ok(distance(start,g.cop)>20);assert.ok(g.catches>0,'Patrol never visited the chor neighbourhood');assert.ok(walkable(g.cop.x,g.cop.y));assert.equal(g.winner,'cop');
+});
+test('same-keyboard inputs independently move both actors and preserve role actions',()=>{
+  const g=fresh();position(g.chor,{x:336,y:400});position(g.cop,{x:816,y:400});const input=movement(new Set(['KeyW','ArrowDown','ShiftLeft','Slash']),{},true);tick(g,.2,input);assert.ok(g.chor.y<400);assert.ok(g.cop.y>400);assert.ok(g.chor.energy<100);assert.ok(g.cop.energy<100);assert.equal(actionFor('Space',true),'jump');assert.equal(actionFor('Enter',true),'net');assert.equal(actionFor('Space',false,'cop'),'net');assert.equal(actionFor('KeyE',false,'cop'),null);const mobile=movement(new Set(),{x:-1,y:1,sprint:true},false,'cop');assert.deepEqual(mobile,{cop:{x:-1,y:1,sprint:true}});
+});
+test('dialogue avoids recent repeats and enforces character cooldowns',()=>{
+  const g=fresh();g.drainEvents();const lines=['one','two','three','four'];g.say('chor',lines);const first=g.speech.at(-1).text;g.say('chor',lines);assert.equal(g.drainEvents().filter(e=>e.type==='dialogue').length,1);g.elapsed+=4;g.say('chor',lines);assert.notEqual(g.speech.at(-1).text,first);assert.ok(g.speech.length<=3);
 });

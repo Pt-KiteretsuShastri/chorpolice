@@ -1,75 +1,58 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#23483d">
-  <meta name="description" content="Small streets. Big chase. A complete, playful chor-police game with talking loot, clever cops, and local two-player mode.">
-  <title>Gully Chase · Maal Has Opinions</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2323483d'/%3E%3Cpath d='M18 21h28v30H18z' fill='%23f3d275'/%3E%3Ccircle cx='32' cy='20' r='12' fill='%23f3d275'/%3E%3Cpath d='M19 15h26v12H19z' fill='%2323483d'/%3E%3Ccircle cx='26' cy='21' r='2' fill='white'/%3E%3Ccircle cx='38' cy='21' r='2' fill='white'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="./style.css">
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#244d3b"><meta name="description" content="A joyful neighbourhood chase. Convince three opinionated treasures, escape over rooftops, and get the maal home.">
+  <title>Gully Chase — Bigger Gully, Louder Maal</title><link rel="stylesheet" href="./style.css">
 </head>
 <body>
-  <div class="page-shell">
-    <header class="site-header">
-      <a class="brand" href="./" aria-label="Gully Chase home"><span class="brand-mark" aria-hidden="true">G<span>↗</span></span><span>GULLY<br>CHASE<span class="orange">.</span></span></a>
-      <span class="header-note">A LITTLE CHASE.<br>A LOT OF CHARACTER.</span>
-      <div class="header-right"><span class="joy-label"><i></i> BUILT FOR JOY</span><button id="sound-btn" class="icon-btn" aria-label="Turn sound on" title="Sound off">♫<span class="sound-slash">/</span></button><button id="help-btn" class="icon-btn" aria-label="How to play">?</button></div>
+  <main class="shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Gully Chase home"><span class="brand-mark" aria-hidden="true">G</span><span>Gully Chase<small>Bigger gully. Louder maal.</small></span></a>
+      <nav aria-label="Game options"><button id="help-btn">How to play</button><button id="invite-btn" class="primary">Invite a friend ↗</button></nav>
     </header>
-    <main>
-      <section class="playground" aria-label="Gully Chase game">
-        <aside class="intro">
-          <p class="eyebrow"><span></span> THE GULLY IS CALLING</p>
-          <h1>SMALL<br>STREETS.<br>BIG <em>CHASE.</em></h1>
-          <div class="tape">MAAL HAS OPINIONS <span>✳</span></div>
-          <p class="intro-copy">Steal the loot. Dodge the cop.<br>Convince your samosa to <span class="underline">shut up.</span></p>
-          <div class="role-switch" aria-label="Choose your role">
-            <button class="role active" data-role="chor" aria-pressed="true"><span class="role-face chor-face">●<b>••</b></span><span>Be the chor<small>Grab. Bank. Repeat.</small></span><span class="role-check">✓</span></button>
-            <button class="role" data-role="cop" aria-pressed="false"><span class="role-face cop-face">●<b>••</b></span><span>Be the cop<small>Catch the chaos.</small></span><span class="role-check">✓</span></button>
-          </div>
-          <div class="round-options"><label for="difficulty">Neighbourhood mood</label><select id="difficulty"><option value="easy">Sunday stroll · easy</option><option value="normal" selected>Full gully · normal</option><option value="hard">Peak traffic · hard</option></select></div>
-          <button id="start-btn" class="primary-btn"><span>▶</span><span id="start-label">Let’s play</span><span>↗</span></button>
-          <button id="duo-btn" class="secondary-btn">Play with a friend <span>↗</span></button>
-          <p class="mode-caption">2 MIN ROUNDS <b>•</b> SAME-KEYBOARD DUO</p>
-          <button id="intro-help" class="text-btn">ⓘ &nbsp; First time in the gully?</button>
-          <div class="personal-best"><span>YOUR LOCAL RECORD</span><strong id="best">The gully awaits.</strong></div>
-        </aside>
-        <section class="game-column" aria-label="Game area">
-          <div class="map-caption"><span><i></i> GULLY NO. 04 &nbsp; · &nbsp; NEIGHBOURHOOD WATCH</span><span class="stamp">A VERY UNQUIET NEIGHBOURHOOD</span></div>
-          <div id="board" class="board">
-            <canvas id="game" width="960" height="640" role="img" aria-label="Top-down neighbourhood map. Use WASD or arrow keys to move. Full keyboard controls are below the map.">Your browser needs Canvas to display the game.</canvas>
-            <div id="hud" class="hud" hidden>
-              <div class="hud-tag"><span id="mode-label">SOLO · CHOR</span><strong id="clock">2:00</strong></div>
-              <div class="hud-progress"><span>LOOT BANKED</span><strong id="score">0 <small>/ 3</small></strong></div>
-              <div class="hud-tag right"><span>CHANCES LEFT</span><strong id="lives">● ● ●</strong></div>
+    <section id="board" aria-label="Gully Chase game">
+      <div class="hud" id="hud">
+        <div><span class="eyebrow" id="mode-label">THE GULLY IS OPEN</span><strong id="clock">2:00</strong></div>
+        <div><span class="eyebrow">BANKED</span><strong id="score">0 <small>/ 3</small></strong></div>
+        <div class="chances"><span class="eyebrow">CHOR CHANCES</span><strong id="lives" aria-label="Three chances">● ● ●</strong></div>
+        <div class="bag"><span class="eyebrow">BAG</span><strong id="bag-label">Empty · find a treasure</strong><span id="trust-label"></span></div>
+        <div class="stamina"><label for="energy" id="energy-label">ENERGY</label><progress id="energy" max="100" value="100">100%</progress><span id="cop-energy" hidden></span></div>
+      </div>
+      <div class="playfield" id="playfield">
+        <canvas id="game" width="1280" height="832" tabindex="0" aria-label="Animated neighbourhood map. Use the instructions below to play."></canvas>
+        <div class="event-banner" id="event-banner" hidden><strong id="event-title"></strong><span id="event-time"></span><small id="event-description"></small></div>
+        <div class="overlay" id="menu-screen">
+          <div class="panel menu">
+            <span class="eyebrow">120 SECONDS · 3 TREASURES</span><h1>Bring the maal home.</h1>
+            <p>Make the loot an offer. Dodge the patrol. Bank all three at the green safehouse.</p>
+            <div class="mode-options" role="group" aria-label="Choose your role">
+              <button data-mode="chor" class="selected" aria-pressed="true">Solo chor<small>Steal & escape</small></button><button data-mode="cop" aria-pressed="false">Solo cop<small>Patrol & catch</small></button><button data-mode="duo" aria-pressed="false">Two players<small>Same keyboard</small></button>
             </div>
-            <div id="welcome-tag" class="welcome-tag"><span>THE LOOT</span><strong>TALKS BACK.</strong><b>♧</b></div>
-            <div id="map-tip" class="map-tip">1 · 2 · 3 &nbsp; GRAB THE LOOT. FOLLOW THE TRAIL HOME.</div>
-            <div id="energy-panel" class="energy-panel" hidden><span id="energy-label">SPRINT</span><div><i id="energy-fill"></i></div><span id="bag-label">BAG EMPTY</span></div>
-            <div id="play-actions" class="play-actions" hidden><button id="pause-btn" aria-label="Pause game">Ⅱ</button><button id="restart-btn" aria-label="Restart round">↻</button></div>
-            <div id="countdown" class="countdown" hidden aria-live="assertive">3</div>
-            <div id="pause-screen" class="board-overlay" hidden><p class="eyebrow">CHAI BREAK</p><h2>Catch your breath.</h2><p>The gully can wait.</p><button id="resume-btn" class="primary-btn">Back to the chase &nbsp; ▶</button><button id="quit-btn" class="text-btn">Return to neighbourhood</button></div>
-            <div id="result-screen" class="board-overlay" hidden><p id="result-kicker" class="eyebrow">ROUND COMPLETE</p><div id="result-icon" class="result-icon">✳</div><h2 id="result-title">Maal delivered!</h2><p id="result-copy"></p><div class="result-stats"><div><span>LOOT BANKED</span><strong id="result-score">3/3</strong></div><div><span>TIME TAKEN</span><strong id="result-time">1:02</strong></div></div><button id="again-btn" class="primary-btn">One more chase &nbsp; ↗</button><button id="result-home" class="text-btn">Back to neighbourhood</button></div>
-            <div id="load-error" class="board-overlay" hidden><h2>The gully hit a pothole.</h2><p id="error-copy">Please reload the page to try again.</p><button id="reload-btn" class="primary-btn">Reload game ↻</button></div>
+            <label class="difficulty">Challenge <select id="difficulty"><option value="easy">Easy</option><option value="normal" selected>Normal</option><option value="hard">Hard</option></select></label>
+            <p class="sound-note" id="sound-note">Start enables voices and sound. Both can be muted separately.</p>
+            <button class="primary start" id="start-btn">Enter the gully →</button><small class="seed" id="menu-seed"></small>
           </div>
-          <div class="under-map"><div id="controls" class="keyboard-hints"><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> move</span><span><kbd>SHIFT</kbd> sprint</span><span><kbd>E</kbd> grab / bank</span><span><kbd>Q</kbd> drop</span><span><kbd>F</kbd> hush</span></div><button id="fullscreen-btn" class="icon-btn" aria-label="Enter fullscreen">⛶</button></div>
-          <div id="mobile-controls" class="mobile-controls"><div class="dpad" aria-label="Movement touch controls"><button data-move="up" aria-label="Move up">↑</button><button data-move="left" aria-label="Move left">←</button><button data-move="down" aria-label="Move down">↓</button><button data-move="right" aria-label="Move right">→</button></div><div class="touch-actions"><button id="touch-sprint">Sprint</button><button id="touch-action">Grab / bank</button><button id="touch-special">Hush</button></div></div>
-          <div class="status-strip"><span class="spark">✳</span><p id="status" role="status" aria-live="polite">Childhood nostalgia. Unreasonably opinionated objects.</p><span class="status-dot"></span><span id="live-label">GULLY IS OPEN</span></div>
-        </section>
-      </section>
-      <section class="loot-section" aria-labelledby="loot-title"><div class="section-heading"><p class="eyebrow">MEET YOUR BAGGAGE</p><h2 id="loot-title">Three treasures. <span>Zero chill.</span></h2><p>Every piece of loot has a personality.<br>And absolutely no indoor voice.</p></div>
-        <div class="loot-grid">
-          <article class="loot-card cooker-card"><div class="card-top"><span>01 / PRESSURE COOKER</span><span>↗</span></div><div class="loot-art" aria-hidden="true"><span class="cooker-art"><i></i></span></div><div class="loot-desc"><h3>Chef Seeti</h3><p>“Main pressure mein hoon!”</p><span>Whistles loudly. Gives away your position.</span></div></article>
-          <article class="loot-card trophy-card"><div class="card-top"><span>02 / DRAMA TROPHY</span><span>↗</span></div><div class="loot-art" aria-hidden="true"><span class="trophy-art">★</span></div><div class="loot-desc"><h3>Sir Jeet-a-Lot</h3><p>“Mera award kahan hai?”</p><span>Heavy ego. Slightly slower getaway.</span></div></article>
-          <article class="loot-card samosa-card"><div class="card-top"><span>03 / SNACK WITH OPINIONS</span><span>↗</span></div><div class="loot-art" aria-hidden="true"><span class="samosa-art"><b>••</b></span></div><div class="loot-desc"><h3>Samosa Singh</h3><p>“Bhai, chutney toh le le!”</p><span>Small snack. Exceptionally big mouth.</span></div></article>
         </div>
-      </section>
-      <section class="how-strip"><span class="tiny-mark">↗</span><p><strong>A little chaos brings people together.</strong> Take turns. Share a keyboard. Find joy in a ridiculous chase.</p><button id="bottom-help" class="text-btn">Learn the rules &nbsp; ↗</button></section>
-    </main>
-    <footer><span>GULLY CHASE <b>✳</b> TECHNOLOGY FOR JOY</span><span>MADE FOR A GOOD TIME.</span><span>NO SAMOSAS WERE HARMED.</span></footer>
-  </div>
-  <dialog id="help-dialog"><button class="dialog-close icon-btn" data-close aria-label="Close instructions">×</button><p class="eyebrow">QUICK GULLY GUIDE</p><h2>Crime has never<br>been this <em>silly.</em></h2><div class="rules-grid"><div><span class="rule-number">01</span><h3>Grab the gossip.</h3><p>Walk to one of the three glowing treasures. Press <kbd>E</kbd> to pick it up. You can carry one at a time.</p></div><div><span class="rule-number">02</span><h3>Bring it home.</h3><p>Return to the green safehouse at the bottom left and press <kbd>E</kbd> to bank. Deliver all three before time runs out.</p></div><div><span class="rule-number">03</span><h3>Keep it down.</h3><p>Loot makes noise that attracts the cop. <kbd>F</kbd> spends 25 energy to hush it for 5 seconds. <kbd>Q</kbd> drops it. Chai restores energy.</p></div><div><span class="rule-number">04</span><h3>Or be the cop.</h3><p>Tag the chor three times to win. <kbd>SPACE</kbd> throws a short-range net with a 5-second cooldown. Watch the red noise rings!</p></div></div><div class="duo-rule"><strong>TWO PEOPLE, ONE KEYBOARD.</strong><p>Chor: WASD · Shift sprint · E grab/bank · Q drop · F hush.<br>Cop: Arrow keys · / sprint · Enter net. Tagging happens on contact.<br>Solo: WASD or arrows · Shift sprint · Space net as cop.</p></div><p class="rules-small">Bushes hide a quiet chor from distant cops. The trophy slows you down. Esc / P pauses. Touch controls support solo play. Local best scores stay on this browser.</p><button class="primary-btn" data-close>Got it. Let’s cause chaos. ↗</button></dialog>
-  <noscript><div class="noscript">Please enable JavaScript to play Gully Chase.</div></noscript>
+        <div class="overlay" id="pause-screen" hidden><div class="panel compact"><span class="eyebrow">TIME IS FROZEN</span><h2>Chai break.</h2><button class="primary" id="resume-btn">Resume chase</button><button id="restart-btn">New round</button><button id="quit-btn">Choose a role</button></div></div>
+        <div class="overlay" id="result-screen" hidden><div class="panel compact"><span class="eyebrow" id="result-kicker">ROUND COMPLETE</span><h2 id="result-title"></h2><p id="result-copy"></p><p id="result-stats" class="result-stats"></p><button class="primary" id="again-btn">Rematch · new loot</button><button id="replay-btn">Replay this seed</button><button id="result-home">Choose a role</button></div></div>
+        <section class="negotiation" id="negotiation" aria-label="Convince your loot" hidden><span class="eyebrow" id="talk-name"></span><h2 id="talk-prompt"></h2><div id="talk-choices"></div><small>Match its wish. Wrong offers make noise. You can keep moving.</small></section>
+        <div class="load-error" id="load-error" role="alert" hidden><h2>The map could not start.</h2><p id="error-copy"></p><button onclick="location.reload()">Reload</button></div>
+      </div>
+      <div class="game-toolbar">
+        <p id="status">Amber ladders lead to rooftops. The green courtyard is home.</p>
+        <div class="tools"><button id="voice-btn" aria-pressed="true" title="Toggle spoken dialogue">Voice on</button><button id="sound-btn" aria-pressed="true" title="Toggle sound effects">SFX on</button><button id="map-btn" aria-pressed="false" title="Overview (M)">Map</button><button id="pause-btn" disabled title="Pause (P)">Pause</button><button id="fullscreen-btn" title="Fullscreen" aria-label="Enter fullscreen">⛶</button></div>
+      </div>
+      <p class="caption" id="caption" role="status" aria-live="polite" aria-atomic="true">Captions stay on, even when sound is muted.</p>
+      <div class="touch-controls" id="mobile-controls" aria-label="Touch game controls">
+        <div class="dpad"><button data-move="up" aria-label="Move up">↑</button><button data-move="left" aria-label="Move left">←</button><button data-move="down" aria-label="Move down">↓</button><button data-move="right" aria-label="Move right">→</button></div>
+        <div class="touch-actions"><button id="touch-sprint">Hold sprint</button><button id="touch-jump">Jump</button><button id="touch-action" class="primary">Talk / bank / chai</button><button id="touch-special">New offer</button><button id="touch-drop">Drop</button></div>
+      </div>
+    </section>
+    <section class="instructions" aria-label="Quick instructions"><p id="controls"></p><p><strong>Chor:</strong> E to talk, bank or sit for chai. Choose an offer with 1–3. Space climbs amber ladders and leaps to nearby roofs. F renews a promise. Q drops loot. Chai seats make you invisible; the clock keeps running.</p><p><strong>Cop:</strong> Tag the chor three times or hold out for two minutes. Nets stun within clear sight. Cars radio sightings. Rooftops and seated chai drinkers are protected. <button class="text-button" id="more-help">All instructions ↗</button></p></section>
+  </main>
+  <dialog id="help-dialog" aria-labelledby="help-title"><button data-close="help-dialog" class="close" aria-label="Close instructions">×</button><span class="eyebrow">THE RULES OF THE GULLY</span><h2 id="help-title">A little chase. A lot of character.</h2><p>Chor wins by delivering three treasures, one at a time, to the green safehouse. Cop wins with three tags or when the two-minute clock runs out.</p><ul><li><strong>Move:</strong> WASD or arrows. Hold Shift to sprint. Energy recharges when you slow down; chai cups restore it.</li><li><strong>Persuade:</strong> Stand by a numbered treasure and press E. Read its wish and choose 1, 2 or 3. A bad offer makes noise. Keep your promise alive with F when trust falls.</li><li><strong>Rooftops:</strong> Space at an amber ladder climbs up or down. On a roof, face a nearby roof and press Space to leap. Each jump costs 18 energy. Ground patrols cannot tag you there. Deliveries happen on the ground.</li><li><strong>Hide:</strong> E beside either chair at Chai & Gossip makes you invisible and untouchable. E leaves. Sitting restores energy but never stops the clock.</li><li><strong>Cop:</strong> Space throws a short-range net every five seconds. Follow visible noise rings, patrol car sightings, and the chor's route.</li><li><strong>Two players:</strong> P1 chor uses WASD, Shift, E, F, Q, Space and 1–3. P2 cop uses arrows, / to sprint and Enter to net. Play together on one keyboard; there is no online multiplayer.</li><li><strong>Map & breaks:</strong> M toggles overview. P or Escape pauses. Switching away pauses automatically. Fullscreen is available when your browser supports it.</li></ul><h3>Five opinionated treasures</h3><p>Chef Seeti whistles loudest. Sir Jeet-a-Lot is heavier. Samosa Singh travels light but calls for chutney. Bol Bachchan Radio carries farther chatter. Chappal Express grants a short speed burst on pickup. Three different treasures appear in three different districts each round.</p><h3>A different gully each time</h3><p>Two timed events bring extra chai, speed chutney or a false radio call. An invitation shares the same seeded challenge, including loot, events and morning or evening light. Rematch makes a fresh challenge.</p><button class="primary" data-close="help-dialog">Got it</button></dialog>
+  <dialog id="invite-dialog" aria-labelledby="invite-title"><button data-close="invite-dialog" class="close" aria-label="Close invitation">×</button><span class="eyebrow">INVITE A FRIEND</span><h2 id="invite-title">Same gully. Your turn.</h2><p>Send this link for the same loot and event seed, or choose <strong>Two players</strong> to chase each other on one keyboard.</p><label for="invite-link">Challenge link</label><input id="invite-link" readonly><button class="primary" id="copy-link">Copy invitation</button><p id="copy-status" role="status">This shares a challenge, not an online session.</p></dialog>
   <script type="module" src="./app.js"></script>
 </body>
 </html>

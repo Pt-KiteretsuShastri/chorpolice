@@ -1,102 +1,121 @@
-# Gully Chase · Maal Has Opinions
+# Gully Chase · Bigger Gully, Louder Maal
 
-**Small streets. Big chase.** A complete, cheerful chor-police browser game for the theme **“Using technology to find joy.”** Steal three treasures, escape a cop, and convince your talking samosa to keep quiet.
+A complete, browser-local chor–police game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the maal home. Solo chor, solo cop and same-keyboard two-player are included.
+
+The page contains the game, its instructions and a friend invitation. No marketing sections, accounts, paid APIs, runtime dependencies or remote assets.
 
 ## Deploy to Vercel
 
-1. In Vercel, choose **Add New → Project** and import **Pt-KiteretsuShastri/chorpolice**.
-2. Leave **Root Directory** at the repository root (`.`).
-3. Deploy. The checked-in `vercel.json` selects **Other** as the framework, skips installation and building, and serves **dist**.
-
-No environment variables, API keys, database, or paid services are needed. Do not run `npm start` as a Vercel build command: that command is only a local development server.
-
-If you set overrides in the Vercel dashboard, use these values:
+Import **[Pt-KiteretsuShastri/chorpolice](https://github.com/Pt-KiteretsuShastri/chorpolice)** into Vercel. Keep the repository root as the Root Directory. The checked-in `vercel.json` serves the already-authored `dist` directory directly.
 
 | Setting | Value |
 | --- | --- |
-| Framework Preset | Other |
-| Root Directory | `.` (repository root) |
-| Build Command | Empty / skipped |
+| Framework Preset | Other (`framework: null`) |
+| Root Directory | `.` |
 | Install Command | Empty / skipped |
+| Build Command | Empty / skipped |
 | Output Directory | `dist` |
+| Environment variables | None |
 
-Vercel documentation: https://vercel.com/docs/project-configuration/vercel-json
+Do not use `npm start` as a deployment build command; it starts a development server. A connected Vercel project can deploy pushes to `main`. Repository changes do not by themselves confirm a successful Vercel deployment.
 
 ## Run locally
-
-No dependencies, package installation, build step, API keys, or backend are required.
 
 ```bash
 git clone https://github.com/Pt-KiteretsuShastri/chorpolice.git
 cd chorpolice
-python3 -m http.server 8080 --directory dist
+npm start
 ```
 
-Open **http://localhost:8080**. Use a local HTTP server rather than opening the HTML as a `file://` URL, because the game uses JavaScript modules. With Node.js and npm installed, `npm start` runs the same Python server.
+Open http://localhost:8080. `npm start` uses Python 3 to serve `dist`; alternatively run `python3 -m http.server 8080 --directory dist`. Use HTTP rather than opening the HTML as a file, because the game uses ES modules. No installation or compilation is needed.
 
-## Rules
+## Play
 
-- **Chor:** collect and bank all three treasures at the green safehouse before two minutes expire.
-- **Cop:** tag the chor three times, or keep at least one treasure unbanked until time expires.
-- Carry one treasure at a time. Getting tagged returns carried loot to its original location; banked loot stays safe.
-- Each treasure talks. Noise attracts the police. Hush costs 25 energy and lasts five seconds.
-- The trophy is heavy and slows its carrier. Bushes hide a quiet chor from distant cops.
-- Chai cups restore sprint energy and respawn after 16 seconds.
-- Solo play supports either role. The opponent uses grid pathfinding and respects the same walls.
-- Two-player mode is **local, on one keyboard**. It has no online matchmaking.
+**Chor:** persuade and deliver three treasures, one at a time, to the green safehouse within 120 seconds. Press E beside a treasure, read its wish and choose the matching offer. A wrong offer makes noise; a good offer earns silence. Trust gradually falls while travelling, so renew your promise before the object starts complaining.
 
-## Controls
+**Cop:** tag the chor three times, or keep at least one treasure unbanked until the timer ends. A tag returns carried loot to its original position; banked loot stays safe. Nets require clear sight and briefly stun a nearby chor.
 
-| Action | Solo chor / Player 1 | Solo cop | Player 2 cop |
+| Action | Solo chor / P1 | Solo cop | P2 cop |
 | --- | --- | --- | --- |
-| Move | WASD (arrows also work in solo) | WASD or arrows | Arrow keys |
+| Move | WASD (or arrows in solo) | WASD or arrows | Arrows |
 | Sprint | Shift | Shift | `/` |
-| Grab / bank | E | — | — |
-| Drop loot | Q | — | — |
-| Hush loot | F | — | — |
-| Throw net | — | Space | Enter |
-| Pause / resume | Esc or P | Esc or P | Esc or P |
+| Talk, bank, sit / leave chai | E | — | — |
+| Choose an offer | 1, 2, 3 | — | — |
+| Renew a promise | F | — | — |
+| Drop loot on reachable ground | Q | — | — |
+| Climb / descend / leap rooftops | Space | — | — |
+| Throw net (5-second cooldown) | — | Space | Enter |
+| Overview | M | M | M |
+| Pause / resume | P or Escape | P or Escape | P or Escape |
 
-Tagging happens on contact. Nets have a five-second cooldown, require clear line of sight, and reach approximately 2.5 tiles. Touch buttons support solo play on phones/tablets. Fullscreen is available where supported by the browser.
+- **Rooftops:** amber ladder markers let the chor climb up or down. Face an adjacent roof and jump from its edge to cross a gap. Each jump costs 18 energy. Movement stays within a roof's footprint, and ground patrols and nets cannot catch a rooftop chor. Banking happens on the street.
+- **Tea camouflage:** press E beside either chair at Chai & Gossip. While seated the chor is invisible and untouchable, even to patrol cars. Energy recovers and carried loot stays quiet, but the round timer continues. E leaves the seat.
+- **Energy:** sprinting costs energy; walking or resting restores it. Chai cups refill energy and return after 16 seconds. Both roles can drink them.
+- **Patrols:** two animated police cars follow connected street circuits from the chowki. Sustained sightings radio the chor's location to the cop. A nearby alerted car can tag, with a visible warning before it does. Break sight, use rooftops or sit for chai.
+- **Two players:** local play on one keyboard. The shared camera keeps both players visible. Solo touch controls are available on small screens and touch devices. There is no online multiplayer.
 
-## What is included
+## The neighbourhood
 
-- A procedurally drawn, illustrated 960 × 640 neighbourhood, visible immediately on load.
-- Eight distinct shops and rooftops plus a police chowki, striped awnings, solar panels, water tanks, rooftop washing, market stalls, a small park, and a parked auto.
-- Clear asphalt lanes, numbered loot markers, high-contrast safehouse, and a dotted route home when carrying loot. Solid trees and the parked auto use the same collision grid as the AI. Decorative neighbours walk along legal streets.
-- Three original talking treasures, speech bubbles, expanding noise rings, particles, and opt-in synthesized audio.
-- Easy, normal, and hard police AI; solo cop has an autonomous loot-collecting opponent.
-- Pause, restart, countdown, results, rematch, local records, keyboard and touch controls, and fullscreen.
-- Focus indicators, a keyboard guide, live status text, reduced-motion support, and automatic pause on window blur or backgrounding.
-- No remote art, fonts, game CDN, base64 sprite loading, framework, or Phaser dependency. All game art is Canvas drawing code; the tiny favicon is an independent SVG data URL.
+The world is **40 × 26 tiles at 32 px**: 1280 × 832, approximately 1.73 times the previous area. Bazaar, radio chowk, residential gullies, drama club, park courtyard, chai corner, police chowki and green safehouse connect through street loops, narrow side lanes and open chase areas.
 
-## Validate
+`world.js` is the geometry source for drawing, ground collision, roof boundaries, loot validation and BFS navigation. Buildings, trees, banyan, fruit cart, scooter and parked auto share the same solid grid. Roof decorations are decorative. All ground tiles, spawn candidates, tea seats and rooftop access points are reachable from home.
 
-Requires Node.js 18 or later. No npm install is needed.
+Original Canvas artwork follows the supplied neighbourhood concept: cream paving, sage greenery, terracotta and mustard roofs, dusty blue vehicles, striped awnings, fruit, brick details, solar panels, tanks, laundry, plants, rangoli and bunting. Every district has ambient animation; neighbours use legal ground routes. Steam, flags, laundry, foliage, birds, loot and patrols bring movement to the map. Reduced-motion preference freezes decorative animation and disables smooth camera easing; movement needed to play remains visible.
+
+Solo uses a clamped follow camera. Local two-player shares a camera that fits both actors. A screen-anchored minimap, overview toggle, numbered objectives and dotted route home support navigation. The whole map renders before Start.
+
+## Randomness and rematches
+
+- Twenty validated candidate locations are spread across five loot districts. Each round chooses three different districts, three distinct locations and three different loot personalities.
+- Candidates need player clearance, a route home, distance from the safehouse and cop spawn, and at least 100 px separation from the other treasures. The sum of three round trips has a maximum BFS path budget of 10,500 px.
+- A deterministic seeded shuffle chooses loot, locations, morning/evening light and two distinct event types/times. `?seed=2401` reproduces that round. Given the same inputs, simulation and event placement are reproducible too.
+- Rematch makes a new seed and avoids the preceding arrangement. **Replay this seed** intentionally recreates it. If an alternative needs a retry, the game exposes the resulting effective seed so the invitation still reproduces it exactly.
+- **Invite a friend** copies the seeded challenge URL; it does not send a message or create an online session.
+
+| Personality | Difference | What earns silence |
+| --- | --- | --- |
+| Chef Seeti | Loud pressure-cooker whistles; slight weight | A peaceful picnic |
+| Sir Jeet-a-Lot | Heaviest item, modest speed penalty | An admiring audience |
+| Samosa Singh | Light, with chutney complaints | Extra chutney |
+| Bol Bachchan Radio | Far-reaching chatter; slight weight | An exclusive radio show |
+| Chappal Express | Light; four-second speed perk on pickup | A first-class ride |
+
+Two non-overlapping, twelve-second events are drawn from **Chai Happy Hour** (three extra energy cups), **Chutney Sprint** (marked speed pickups) and **Wrong Number!** (a false radio location for police to investigate). A banner announces each four seconds beforehand and counts down its duration. Sight can override a decoy, so the chor must still break line of sight. Quiet and clean escapes earn result-screen recognition without changing the three-delivery win condition.
+
+## Voices and accessibility
+
+Start is the user interaction that enables optional browser speech and synthesized sound effects. **Voice** and **SFX** have separate toggles. Captions stay on when muted. Speech prefers an installed Indian English voice, uses Hindi for translated lines where available, handles delayed voices and falls back to other voices or captions. Actual voices depend on the browser/device. No microphone permission or API key is requested.
+
+Dialogue has per-character cooldowns, recent-line avoidance and priority. The audio controller cancels stale utterances instead of building a queue. Pause, restart, role changes and quit stop speech. Switching tabs or losing window focus automatically pauses. Controls have visible focus states; help and invitations use native dialogs. Fullscreen is offered where supported.
+
+Only voice/SFX preferences are stored locally. No analytics, accounts, camera, microphone, location or network services are used by the game.
+
+## Verify
+
+Requires Node.js 18 or later. No npm installation is required.
 
 ```bash
 npm run check
 npm test
 ```
 
-Tests cover map connectivity, building collisions, pickup/drop/banking, complete chor victories, noise and hush, tags and protection, nets, pause and timeout, energy and chai, a complete AI chor round, police pursuit, and initial map rendering.
+The **31 automated tests** cover all connected ground tiles and landmarks, every solid footprint, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration.
 
-## Files
+Complete AI chor victories are simulated over four seeds at each difficulty with patrol traffic enabled. Cop victories are simulated against an idle chor. Canvas rendering was also checked with a raster Canvas implementation at full-map, desktop and 360 px phone widths.
 
-```text
-dist/index.html     Page, controls, instructions, and dialogs
-dist/style.css      Responsive styling
-dist/engine.js      Pure deterministic simulation and pathfinding
-dist/renderer.js    Canvas map, characters, loot, and effects
-dist/world-art.js   Detailed neighbourhood illustration
-dist/app.js         Inputs, audio, screen states, and records
-tests/game.test.js  Node.js gameplay and renderer tests
-```
+**Verification limit:** interactive browser control was unavailable in the build environment. Live device speech output, actual touch events, fullscreen, browser layout and human-paced end-to-end play were not browser-tested. The simulation, input mappings, fallback paths and Canvas renders were checked; try the deployed game on the hackathon laptop and phone before presenting.
 
-Serve the contents of `dist/` on any static host. Relative module paths work under a repository subpath, including GitHub Pages. The source is configured for Vercel through the root `vercel.json`; other static hosts can serve `dist/` directly.
+## Source layout
 
-## Privacy and limitations
-
-The game runs entirely in the browser and stores only local win records in `localStorage`. It does not request camera, microphone, location, accounts, or analytics. Sound is off until enabled. It is an original implementation inspired by the neighbourhood chase and talking-loot concept in the supplied reference. It does not include the reference site's source or assets.
-
-Automated simulation and renderer checks are included. Interactive browser QA was unavailable in the build environment; test your chosen laptop, keyboard, and mobile browser before a live demonstration.
+| File | Responsibility |
+| --- | --- |
+| `dist/index.html`, `dist/style.css` | Focused game interface, instructions, invitation, responsive controls |
+| `dist/world.js` | Shared geometry, collision, roofs, BFS paths and patrol circuits |
+| `dist/random.js`, `dist/dialogue.js` | Seeded randomness and personalities/lines |
+| `dist/engine.js` | Browser-independent game rules, AI, events and state |
+| `dist/world-art.js`, `dist/renderer.js` | Local Canvas artwork and animated rendering |
+| `dist/camera.js` | Clamped solo/shared/overview camera |
+| `dist/audio.js` | Optional speech synthesis and sound effects |
+| `dist/input.js`, `dist/app.js` | Input mapping and browser interface wiring |
+| `tests/*.test.js` | Simulation, world, audio, camera and renderer checks |
+| `vercel.json` | Static `dist` deployment configuration |
