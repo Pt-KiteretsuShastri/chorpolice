@@ -1,0 +1,41 @@
+name: Generate Hindi voices
+on:
+  workflow_dispatch:
+    inputs:
+      speaker:
+        description: Character to generate (start with chor to audition)
+        type: choice
+        default: chor
+        options: [chor, cop, neighbor, cooker, trophy, samosa, radio, chappal, all]
+      voice_id:
+        description: ElevenLabs voice ID (used where the character config is empty)
+        type: string
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: gully-audio-generation
+  cancel-in-progress: false
+jobs:
+  generate:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Generate selected Hindi clips
+        id: generate
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_ID: ${{ inputs.voice_id }}
+          VOICE_SPEAKER: ${{ inputs.speaker }}
+        run: node scripts/elevenlabs.mjs --generate --speaker "$VOICE_SPEAKER"
+      - name: Save completed clips, including a partial generation
+        if: always() && steps.generate.outcome != 'skipped'
+        run: |
+          git add dist/assets/audio
+          if git diff --cached --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Add generated Hindi character clips"
+          git push origin HEAD:main
