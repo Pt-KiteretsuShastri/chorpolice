@@ -1,8 +1,10 @@
 # Gully Chase · Bigger Gully, Louder Maal
 
-A complete, browser-local chor–police game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the maal home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
+A Canvas chor–police browser game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the maal home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
 
 The page contains the game, a role-aware controls sidebar and a friend invitation. The sidebar stays beside the playfield on wide screens and moves underneath it on smaller screens. No marketing sections, accounts, paid APIs or remote art. PeerJS 1.5.5 is bundled locally for online connections; creating or joining a room uses its free cloud signaling and default ICE services.
+
+**[Play the deployed game](https://chorpolice-kappa.vercel.app)**
 
 ## Deploy to Vercel
 
@@ -56,7 +58,7 @@ Open http://localhost:8080. `npm start` uses Python 3 to serve `dist`; alternati
 
 ## Online play by link
 
-1. Choose **Online**, then **Create online room**. The host plays chor.
+1. Open the deployed HTTPS site and choose **Online**, then **Create online room**. The host plays chor.
 2. Copy the **join link** and send it to one friend. Keep the host tab open.
 3. Your friend opens the link, clicks **Join as cop**, then **Ready as cop**.
 4. The host clicks **Start round**. Each player uses WASD or arrows, Shift and their role's controls. Touch works for either online role.
@@ -64,17 +66,17 @@ Open http://localhost:8080. `npm start` uses Python 3 to serve `dist`; alternati
 
 Only two players are admitted. Disconnects pause the round; the guest can reconnect using the same link while the host remains open. Closing the host ends the room. Room links are ephemeral and have random 96-bit IDs; they are not accounts or persistent saved games. Play with someone you trust: the host owns the simulation, and this is not an anti-cheat service.
 
-The host validates guest inputs, runs physics, collisions, loot, clocks and events, and sends snapshots 20 times per second. The guest sends controls at up to 30 Hz and interpolates actor positions between snapshots. Freshness checks ignore stale inputs, action replays and old-round packets. Held controls expire after 300 ms without updates; heartbeat loss pauses the game after eight seconds. Each online player has a camera for their role. Tea-hidden chor sprites, carried-loot bubbles and home-route hints are hidden from the cop's view.
+The host validates guest inputs, runs physics, collisions, loot, clocks and events, and sends snapshots at up to 20 Hz. The guest sends controls at up to 30 Hz and interpolates actor positions between snapshots. Freshness checks ignore stale inputs, action replays and old-round packets. Held controls expire after 300 ms without updates; heartbeat loss pauses the game after eight seconds. Each online player has a camera for their role. Tea-hidden chor sprites, carried-loot bubbles and home-route hints are hidden from the cop's view.
 
-Online mode requires internet and a browser with WebRTC. No Vercel backend, environment variables, paid keys or media permissions are needed. Free signaling/ICE service availability and restrictive networks can prevent connections; the lobby reports failures and lets the guest retry. Solo and same-keyboard modes remain available. PeerJS primary documentation: https://peerjs.com/client/faq and https://peerjs.com/client/api/peer . See `THIRD_PARTY_NOTICES.md` for the bundled client's license.
+Online mode requires internet and a browser with WebRTC. No Vercel backend, environment variables, paid keys or media permissions are needed. Free signaling/ICE service availability and restrictive networks can prevent connections; the lobby reports failures and lets the guest retry. Solo and same-keyboard modes remain available. PeerJS primary documentation: https://peerjs.com/client/faq and https://peerjs.com/client/api/peer . See [third-party notices](THIRD_PARTY_NOTICES.md) for the bundled client's license.
 
 ## The neighbourhood
 
-The world is **40 × 26 tiles at 32 px**: 1280 × 832, approximately 1.73 times the previous area. Bazaar, radio chowk, residential gullies, drama club, park courtyard, chai corner, police chowki and green safehouse connect through street loops, narrow side lanes and open chase areas.
+The world is **40 × 26 tiles at 32 px**: 1280 × 832, approximately 1.73 times the previous area. The bazaar, residential gullies, park courtyard, chai corner, police chowki, rooftop terraces and green safehouse connect through street loops, narrow side lanes and open chase areas.
 
-`world.js` is the geometry source for drawing, ground collision, roof boundaries, loot validation and BFS navigation. Buildings, trees, banyan, fruit cart, scooter and parked auto share the same solid grid. Roof decorations are decorative. Every spawn candidate, tea seat and rooftop access point is validated as reachable from home. The painted level uses a finer 8 px navigation graph for curved lanes and courtyard gates while keeping the 32 px world tiles.
+`world.js` is the geometry source for drawing, ground collision, roof boundaries, loot validation and BFS navigation. Building façades, courtyard walls, the banyan, fruit cart and parked scooters share authored collision polygons; navigation is sampled from those same footprints. Roof decorations are decorative. Every spawn candidate, tea seat and rooftop access point is validated as reachable from home. The painted level uses a finer 8 px navigation graph for curved lanes and courtyard gates while keeping the 32 px world tiles.
 
-The supplied detailed neighbourhood image is now the actual level background, bundled locally as `dist/assets/neighbourhood.webp`. It is cleaned of baked-in players, loot, route arrows and parked patrol vehicles so animated game objects remain truthful. The bazaar, park, chai stall, chowki and safehouse keep their illustrated positions. Authored polygon footprints follow the visible façades, walls and parked scooters; traversable rooftop terraces and access markers are defined separately.
+The supplied detailed neighbourhood image is now the actual level background, bundled locally as [`dist/assets/neighbourhood.webp`](dist/assets/neighbourhood.webp). The cleanup prompt and coordinate mapping are in [map asset notes](docs/map-asset.md). It is cleaned of baked-in players, loot, route arrows and parked patrol vehicles so animated game objects remain truthful. The bazaar, park, chai stall, chowki and safehouse keep their illustrated positions. Authored polygon footprints follow the visible façades, walls and parked scooters; traversable rooftop terraces and access markers are defined separately.
 
 Steam, shop bulbs, laundry, falling leaves, birds, walkers and police cars animate over the painted scene. A local geometry-based fallback appears while the image decodes or if it cannot load. Reduced-motion preference freezes decorative animation and disables camera easing; movement needed to play remains visible.
 
@@ -129,6 +131,8 @@ The **41 automated tests** cover all marked landmarks and courtyard gates, solid
 Complete AI chor victories are simulated over four seeds at each difficulty with patrol traffic enabled. Cop victories are simulated against an idle chor. Canvas rendering was also checked with a raster Canvas implementation at full-map, desktop and 360 px phone widths.
 
 **Verification limit:** a live native-WebRTC smoke check registered peers and exchanged offers/answers through PeerJS Cloud, but the data channel timed out in the build environment. Real cross-device/network play remains unverified. Interactive browser control was unavailable. Live device speech output, actual touch events, fullscreen, browser layout and human-paced end-to-end play were not browser-tested. The simulation, input mappings, fallback paths and Canvas renders were checked; try the deployed game on the hackathon laptop and phone before presenting.
+
+Detailed results and remaining device checks: [verification notes](docs/verification.md).
 
 ## Source layout
 
