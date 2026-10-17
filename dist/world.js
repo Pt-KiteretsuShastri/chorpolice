@@ -1,8 +1,8 @@
-/** Authored over the supplied 1536 × 1024 illustration; all coordinates scale to 1280 × 832.
+/** Authored over the supplied 1536 × 1024 illustration; all coordinates scale to 1472 × 960.
  * Ground polygons, terraces and gates are gameplay geometry, never inferred from image colours.
  */
-export const TILE=32,COLS=40,ROWS=26,WIDTH=1280,HEIGHT=832;
-export const MAP_VERSION='painted-gully-1';
+export const TILE=32,COLS=46,ROWS=30,WIDTH=COLS*TILE,HEIGHT=ROWS*TILE;
+export const MAP_VERSION='painted-gully-2';
 export const ART_URL=new URL('./assets/neighbourhood.webp',import.meta.url).href;
 export const P=(x,y)=>({x:x*WIDTH/1536,y:y*HEIGHT/1024});
 const polygon=points=>points.map(([x,y])=>P(x,y));

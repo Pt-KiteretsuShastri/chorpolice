@@ -12,7 +12,7 @@ function pick(g,index=0){position(g.chor,g.loot[index]);g.action('interact');ass
 function bank(g){position(g.chor,SAFE);g.action('interact');}
 
 test('movement collides with painted buildings and never exits the map',()=>{
-  const g=fresh();position(g.chor,P(480,500));tick(g,1,{chor:{x:1}});assert.ok(g.chor.x<434);assert.ok(walkable(g.chor.x,g.chor.y));position(g.chor,P(490,1000));tick(g,6,{chor:{x:-1,sprint:true}});assert.ok(g.chor.x>=10);assert.ok(walkable(g.chor.x,g.chor.y));assert.equal(walkable(NaN,0),false);assert.equal(lineOfSight(P(480,500),P(700,500)),false);
+  const g=fresh();position(g.chor,P(480,500));tick(g,1,{chor:{x:1}});assert.ok(g.chor.x<P(522,500).x);assert.ok(walkable(g.chor.x,g.chor.y));position(g.chor,P(490,1000));tick(g,6,{chor:{x:-1,sprint:true}});assert.ok(g.chor.x>=10);assert.ok(walkable(g.chor.x,g.chor.y));assert.equal(walkable(NaN,0),false);assert.equal(lineOfSight(P(480,500),P(700,500)),false);
 });
 test('collect, persuade, drop, collect again and bank all three treasures',()=>{
   const g=fresh();pick(g);const id=g.carried.id;assert.equal(g.carried.trust,1);g.carried.trust=.1;g.action('persuade');agree(g);assert.equal(g.carried.trust,1);g.action('drop');assert.equal(g.carried,null);assert.equal(g.loot.find(l=>l.id===id).state,'ground');g.action('interact');agree(g);bank(g);assert.equal(g.banked,1);pick(g,1);bank(g);pick(g,2);bank(g);assert.equal(g.phase,'ended');assert.equal(g.winner,'chor');assert.equal(g.banked,3);

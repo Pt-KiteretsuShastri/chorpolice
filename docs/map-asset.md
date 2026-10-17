@@ -1,6 +1,6 @@
 # Painted map asset
 
-`dist/assets/neighbourhood.webp` is the actual playable background, derived from the user's supplied `image(4).png`. The background preserves the supplied 1536 × 1024 street layout and detailed illustrated graphics. It is mapped to the game's 1280 × 832 world. The image is bundled locally, not hotlinked.
+`dist/assets/neighbourhood.webp` is the actual playable background, derived from the user's supplied `image(4).png`. The background preserves the supplied 1536 × 1024 street layout and detailed illustrated graphics. It is mapped to the game's 1472 × 960 world, widened from 1280 × 832 without shrinking characters. The image is bundled locally, not hotlinked.
 
 The built-in image-generation editor removed baked-in gameplay content. Its final prompt was:
 
