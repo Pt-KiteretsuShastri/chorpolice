@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';
 import {LOOT_TYPES,LINES,SHARED_LINES,hindiLine} from '../dist/dialogue.js';
+import {paintNeighbourhood} from '../dist/world-art.js';import {ART_X,ART_Y,P} from '../dist/world.js';
 import {SpeechController,Effects} from '../dist/audio.js';import {Camera} from '../dist/camera.js';import {Renderer} from '../dist/renderer.js';import {Game} from '../dist/engine.js';import {WIDTH,HEIGHT,SAFE,ROOF_ACCESS} from '../dist/world.js';
 
 function audioMock(){let time=0,listener;const calls=[],synth={speaking:false,voices:[],getVoices(){return this.voices;},speak(u){calls.push(u);this.speaking=true;},cancel(){this.speaking=false;},addEventListener(type,fn){listener=fn;},removeEventListener(){listener=null;}};class Utterance{constructor(text){this.text=text;}}const controller=new SpeechController({speechSynthesis:synth,SpeechSynthesisUtterance:Utterance},()=>time);return{controller,synth,calls,advance(n=3){time+=n;},refresh(){listener?.();}};}
@@ -37,4 +38,10 @@ test('HTML, module imports and Vercel configuration have no missing local refere
   const root=new URL('../dist/',import.meta.url),html=readFileSync(new URL('index.html',root),'utf8'),app=readFileSync(new URL('app.js',root),'utf8');const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(ids.length,new Set(ids).size,'Duplicate HTML ids');for(const m of app.matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.includes(m[1]),`Missing #${m[1]}`);
   for(const name of ['app.js','renderer.js','engine.js','world-art.js','world.js','audio.js','camera.js','random.js','dialogue.js','input.js','net-state.js','online-room.js']){const source=readFileSync(new URL(name,root),'utf8');for(const m of source.matchAll(/from\s+'(\.\/[^']+)'/g))assert.ok(readFileSync(new URL(m[1],root),'utf8'));}
   const vercel=JSON.parse(readFileSync(new URL('../vercel.json',root),'utf8'));assert.equal(vercel.outputDirectory,'dist');assert.equal(vercel.buildCommand,'');assert.equal(vercel.installCommand,'');assert.equal(vercel.framework,null);assert.ok(html.includes('name="viewport"'));assert.ok(html.includes('<aside class="instructions control-sidebar"'));assert.ok(ids.includes('control-list'));assert.ok(readFileSync(new URL('style.css',root),'utf8').includes('@media(max-width:1080px)')); assert.ok(readFileSync(new URL('style.css',root),'utf8').includes('prefers-reduced-motion'));
+});
+
+test('painted road patches exactly share the geometry transform without missing strips',()=>{
+  const calls=[],image={width:1536,height:1024};paintNeighbourhood({drawImage:(...args)=>calls.push(args)},image);assert.equal(calls.length,(ART_X.length-1)*(ART_Y.length-1));let area=0;
+  for(const [im,sx,sy,sw,sh,dx,dy,dw,dh]of calls){assert.equal(im,image);const a=P(sx,sy),b=P(sx+sw,sy+sh);assert.deepEqual([dx,dy,dw,dh],[a.x,a.y,b.x-a.x,b.y-a.y]);assert.ok(dw>0&&dh>0);area+=dw*dh;}
+  assert.ok(Math.abs(area-WIDTH*HEIGHT)<.01,'Road patches leave gaps or overlap');
 });

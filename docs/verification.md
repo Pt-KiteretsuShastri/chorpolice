@@ -14,7 +14,7 @@ Documentation is finalized in a following commit. Vercel continues to serve `dis
 ## Passed
 
 - `npm run check`: syntax checks for every authored browser module.
-- `npm test`: 44 passing tests, including wider-lane clearance, complete Hindi translation coverage, Hindi voice preference, delayed loading, English-only device fallback and consistent Loot product copy, alongside the existing gameplay and online/protocol tests.
+- `npm test`: 48 passing tests, including targeted street expansion, image/geometry seam alignment, slanted-wall sliding, high-speed wall collisions, wider-lane clearance, complete Hindi translation coverage, Hindi voice preference, delayed loading, English-only device fallback and consistent Loot product copy, alongside the existing gameplay and online/protocol tests.
 - `npm run test:dom`: actual application modules are loaded into two isolated DOM contexts with paired test data channels. The harness creates a room, opens its link in the second context, readies/starts both players, sends guest controls, pauses/resumes both, prepares a rematch, disconnects/rejoins during that round, checks fresh guest inputs after rejoining, and returns to solo.
 - Seeded randomization: 200 rounds checked for distinct personalities, districts, clearance, separation and path-distance bounds.
 - Complete simulation rounds: AI chor wins over four seeds at all difficulties, with police traffic enabled. Cop victories are simulated against an idle chor. Banking, caught-loot reset, timer expiry and event cleanup are checked.

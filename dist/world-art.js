@@ -1,9 +1,16 @@
 /** The supplied painted level, with a deterministic fallback and ambient overlays. */
-import {WIDTH,HEIGHT,GRID,TILE,GROUND_OBSTACLES,SOLID_PROPS,P} from './world.js';
+import {WIDTH,HEIGHT,GRID,TILE,GROUND_OBSTACLES,SOLID_PROPS,P,ART_X,ART_Y} from './world.js';
 const circle=(c,x,y,r,color)=>{c.fillStyle=color;c.beginPath();c.arc(x,y,r,0,Math.PI*2);c.fill();};
 const line=(c,a,b,color,width=1)=>{c.strokeStyle=color;c.lineWidth=width;c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke();};
 export function paintNeighbourhood(c,image=null){
-  if(image){c.drawImage(image,0,0,WIDTH,HEIGHT);return;}
+  if(image){
+    // Draw contiguous source patches through the same street expansion as P().
+    const sx=(image.naturalWidth||image.width||1536)/1536,sy=(image.naturalHeight||image.height||1024)/1024;
+    for(let y=0;y<ART_Y.length-1;y++)for(let x=0;x<ART_X.length-1;x++){
+      const a=P(ART_X[x],ART_Y[y]),b=P(ART_X[x+1],ART_Y[y+1]);
+      c.drawImage(image,ART_X[x]*sx,ART_Y[y]*sy,(ART_X[x+1]-ART_X[x])*sx,(ART_Y[y+1]-ART_Y[y])*sy,a.x,a.y,b.x-a.x,b.y-a.y);
+    }return;
+  }
   // A usable map is visible even during image decoding or if the asset fails.
   c.fillStyle='#e4d1a4';c.fillRect(0,0,WIDTH,HEIGHT);
   for(let y=0;y<GRID.length;y++)for(let x=0;x<GRID[0].length;x++)if(!GRID[y][x]){c.fillStyle='#bdbaa0';c.fillRect(x*TILE,y*TILE,TILE,TILE);}

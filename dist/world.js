@@ -1,14 +1,22 @@
-/** Authored over the supplied 1536 × 1024 illustration; all coordinates scale to 1472 × 960.
- * Ground polygons, terraces and gates are gameplay geometry, never inferred from image colours.
- */
-export const TILE=32,COLS=46,ROWS=30,WIDTH=COLS*TILE,HEIGHT=ROWS*TILE;
-export const MAP_VERSION='painted-gully-2';
+/** Shared road expansion keeps the painted streets, solids and navigation aligned. */
+export const TILE=32,COLS=52,ROWS=34,WIDTH=COLS*TILE,HEIGHT=ROWS*TILE;
+export const MAP_VERSION='painted-gully-3';
 export const ART_URL=new URL('./assets/neighbourhood.webp',import.meta.url).href;
-export const P=(x,y)=>({x:x*WIDTH/1536,y:y*HEIGHT/1024});
-const polygon=points=>points.map(([x,y])=>P(x,y));
+// Extra space is allocated to streets, rather than uniformly enlarging houses.
+const expand=(n,bands)=>bands.reduce((extra,[start,end,amount])=>extra+Math.max(0,Math.min(1,(n-start)/(end-start)))*amount,0);
+const X_BANDS=[[430,530,80],[817,950,72],[1310,1390,40]],Y_BANDS=[[280,350,40],[635,715,56],[940,1000,32]];
+export const ART_X=[0,...X_BANDS.flatMap(([a,b])=>[a,b]),1536];
+export const ART_Y=[0,...Y_BANDS.flatMap(([a,b])=>[a,b]),1024];
+export const P=(x,y)=>({x:x*1472/1536+expand(x,X_BANDS),y:y*960/1024+expand(y,Y_BANDS)});
+// A diagonal edge can cross multiple stretch bands. Split it at every seam so
+// the collision outline follows the same piecewise transform as the artwork.
+const polygon=points=>points.flatMap(([x,y],i)=>{const [xx,yy]=points[(i+1)%points.length],ts=[0];
+  for(const k of ART_X)if(xx!==x){const t=(k-x)/(xx-x);if(t>0&&t<1)ts.push(t);}
+  for(const k of ART_Y)if(yy!==y){const t=(k-y)/(yy-y);if(t>0&&t<1)ts.push(t);}
+  return [...new Set(ts)].sort((a,b)=>a-b).map(t=>P(x+(xx-x)*t,y+(yy-y)*t));});
 const block=(id,kind,points)=>({id,kind,polygon:polygon(points)});
 const rectangle=(x,y,w,h)=>[[x,y],[x+w,y],[x+w,y+h],[x,y+h]];
-const terrace=(id,name,x,y,w,h,kind='home')=>({id,name,kind,x:x/1536*COLS,y:y/1024*ROWS,w:w/1536*COLS,h:h/1024*ROWS});
+const terrace=(id,name,x,y,w,h,kind='home')=>{const a=P(x,y),b=P(x+w,y+h);return{id,name,kind,x:a.x/TILE,y:a.y/TILE,w:(b.x-a.x)/TILE,h:(b.y-a.y)/TILE};};
 export const SAFE={...P(288,916),radius:40};
 export const CHOR_SPAWN=P(288,885);
 export const STATION=P(1415,254);
@@ -88,6 +96,29 @@ export function walkable(x,y,r=10){
   if(!Number.isFinite(x)||!Number.isFinite(y)||x-r<0||y-r<0||x+r>WIDTH||y+r>HEIGHT)return false;
   for(const b of SOLIDS){if(x+r<b.minX||x-r>b.maxX||y+r<b.minY||y-r>b.maxY)continue;const p=b.polygon;if(pointInPolygon(x,y,p))return false;for(let i=0;i<p.length;i++)if(edgeDistance(x,y,p[i],p[(i+1)%p.length])<r)return false;}
   return true;
+}
+/** Sweep in short steps, stop at contact, then project motion along the wall.
+ * This handles painted sloping façades without axis-order sticking or teleporting.
+ */
+export function moveGround(a,dx,dy,r=10){
+  if(!walkable(a.x,a.y,r)||!Number.isFinite(dx)||!Number.isFinite(dy))return false;
+  const start={x:a.x,y:a.y},steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/2));
+  for(let step=0;step<steps;step++){
+    const vx=dx/steps,vy=dy/steps;
+    if(walkable(a.x+vx,a.y+vy,r)){a.x+=vx;a.y+=vy;continue;}
+    let lo=0,hi=1;for(let j=0;j<10;j++){const t=(lo+hi)/2;if(walkable(a.x+vx*t,a.y+vy*t,r))lo=t;else hi=t;}
+    a.x+=vx*lo;a.y+=vy*lo;
+    const rx=vx*(1-lo),ry=vy*(1-lo),range=r+Math.hypot(rx,ry)+.1,normals=[];
+    for(const b of SOLIDS){if(a.x+range<b.minX||a.x-range>b.maxX||a.y+range<b.minY||a.y-range>b.maxY)continue;
+      const p=b.polygon;for(let i=0;i<p.length;i++){const u=p[i],v=p[(i+1)%p.length],ex=v.x-u.x,ey=v.y-u.y,t=clamp(((a.x-u.x)*ex+(a.y-u.y)*ey)/(ex*ex+ey*ey||1),0,1),nx=a.x-u.x-ex*t,ny=a.y-u.y-ey*t,d=Math.hypot(nx,ny);if(d>0&&d<range)normals.push({x:nx/d,y:ny/d});}}
+    if(a.x-r<range-r)normals.push({x:1,y:0});if(WIDTH-a.x-r<range-r)normals.push({x:-1,y:0});
+    if(a.y-r<range-r)normals.push({x:0,y:1});if(HEIGHT-a.y-r<range-r)normals.push({x:0,y:-1});
+    let best=null,bestProgress=0;
+    for(const n of normals){const into=rx*n.x+ry*n.y;if(into>=0)continue;const x=rx-into*n.x,y=ry-into*n.y,progress=x*rx+y*ry;
+      if(progress>bestProgress&&walkable(a.x+x,a.y+y,r)){best={x,y};bestProgress=progress;}}
+    if(best){a.x+=best.x;a.y+=best.y;}
+  }
+  return distance(a,start)>.00001;
 }
 export function buildGrid(){return Array.from({length:ROWS},(_,y)=>Array.from({length:COLS},(_,x)=>walkable((x+.5)*TILE,(y+.5)*TILE,12)?0:1));}
 export const GRID=buildGrid();

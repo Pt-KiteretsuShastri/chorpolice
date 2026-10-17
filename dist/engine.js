@@ -1,5 +1,5 @@
 /** Deterministic simulation. Browser, speech, and drawing stay in other modules. */
-import {TILE,COLS,ROWS,WIDTH,HEIGHT,NAV_TILE,SAFE,CHOR_SPAWN,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,roofAt,findPath,pathDistance,lineOfSight,nearestGround,closedRoute} from './world.js';
+import {TILE,COLS,ROWS,WIDTH,HEIGHT,NAV_TILE,SAFE,CHOR_SPAWN,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,PATROL,CAR_WAYPOINTS,ROOF_ACCESS,GRID,clamp,distance,walkable,moveGround,roofAt,findPath,pathDistance,lineOfSight,nearestGround,closedRoute} from './world.js';
 import {seedNumber,randomFrom,shuffled} from './random.js';
 import {LOOT_TYPES,DISTRACTIONS,LINES,SHARED_LINES,hindiLine,speakerName} from './dialogue.js';
 export {TILE,COLS,ROWS,WIDTH,HEIGHT,SAFE,STATION,BUILDINGS,SOLID_PROPS,BUSHES,TEA_SPOTS,CHAI_SPOTS,SPAWN_CANDIDATES,ROOF_ACCESS,GRID,distance,walkable,findPath,lineOfSight,LOOT_TYPES};
@@ -122,8 +122,10 @@ export class Game{
   move(a,dx,dy,sprint,dt,speed){
     a.moving=false;a.sprinting=false;if(a.seated||a.jump){a.energy=clamp(a.energy+18*dt,0,100);return;}
     const len=Math.hypot(dx,dy);if(len>.01&&a.stun<=0){dx/=len;dy/=len;a.dir=Math.atan2(dy,dx);const run=sprint&&a.energy>1;if(run){speed*=1.42;a.energy=clamp(a.energy-29*dt,0,100);a.sprinting=true;}else a.energy=clamp(a.energy+14*dt,0,100);
-      const can=(x,y)=>a.layer==='roof'?roofAt(x,y)?.id===a.roofId:walkable(x,y);
-      const step=speed*dt;let moved=false;if(can(a.x+dx*step,a.y)){a.x+=dx*step;moved=true;}if(can(a.x,a.y+dy*step)){a.y+=dy*step;moved=true;}a.moving=moved;if(moved)a.walk+=dt*(run?17:11);
+      const step=speed*dt;let moved;
+      if(a.layer==='roof'){const b=BUILDINGS.find(b=>b.id===a.roofId),x=a.x,y=a.y;if(b){a.x=clamp(a.x+dx*step,b.x*TILE+13,(b.x+b.w)*TILE-13);a.y=clamp(a.y+dy*step,b.y*TILE+13,(b.y+b.h)*TILE-13);}moved=distance(a,{x,y})>.00001;}
+      else moved=moveGround(a,dx*step,dy*step);
+      a.moving=moved;if(moved)a.walk+=dt*(run?17:11);
     }else a.energy=clamp(a.energy+21*dt,0,100);
   }
   follow(a,target,dt,speed,sprint=false){

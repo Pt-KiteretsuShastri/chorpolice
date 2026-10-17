@@ -2,8 +2,8 @@ import {test} from 'node:test';import assert from 'node:assert/strict';
 import {GRID,COLS,ROWS,TILE,WIDTH,HEIGHT,SAFE,STATION,BUILDINGS,SOLID_PROPS,SPAWN_CANDIDATES,CHAI_SPOTS,TEA_SPOTS,ROOF_ACCESS,PATROL,CAR_WAYPOINTS,walkable,findPath,distance,closedRoute,roofAt,GROUND_OBSTACLES,CHOR_SPAWN,pathDistance,P,pointInPolygon} from '../dist/world.js';
 import {makeRound} from '../dist/engine.js';import {randomFrom,shuffled} from '../dist/random.js';
 
-test('46 × 30 painted world: every marked objective, spawn and access point is reachable',()=>{
-  assert.equal(WIDTH,1472);assert.equal(HEIGHT,960);assert.equal(TILE,32);assert.ok(SPAWN_CANDIDATES.length>=12);
+test('52 × 34 painted world: every marked objective, spawn and access point is reachable',()=>{
+  assert.equal(WIDTH,1664);assert.equal(HEIGHT,1088);assert.equal(TILE,32);assert.ok(SPAWN_CANDIDATES.length>=12);
   for(const p of [SAFE,CHOR_SPAWN,STATION,...SPAWN_CANDIDATES,...CHAI_SPOTS,...TEA_SPOTS,...PATROL,...ROOF_ACCESS.map(a=>a.ground)]){assert.ok(walkable(p.x,p.y,12),`Blocked ${JSON.stringify(p)}`);assert.ok(findPath(SAFE,p).length,`Unreachable ${JSON.stringify(p)}`);}
   for(const a of ROOF_ACCESS)assert.equal(roofAt(a.roof.x,a.roof.y)?.id,a.buildingId);
   for(const route of [[CHOR_SPAWN,P(288,1000),P(485,950),STATION],[P(1200,580),P(1180,655),SAFE]])for(let i=1;i<route.length;i++)assert.ok(findPath(route[i-1],route[i]).length,'Courtyard gate or street loop is blocked');
@@ -29,3 +29,9 @@ test('round seeds reproduce full layouts, palettes and event plans, including al
 });
 
 test('wider lanes give the park gate, chai lane and safehouse approach extra clearance',()=>{for(const [x,y,r]of [[1200,645,13],[480,800,18],[288,978,26],[490,500,32]]){const p=P(x,y);assert.ok(walkable(p.x,p.y,r),`Lane is too tight at ${x},${y}`);assert.ok(findPath(SAFE,p).length);}});
+
+test('main street corridors gain targeted width rather than scaling every house',()=>{
+  for(const [a,b,extra]of [[430,530,80],[817,950,72],[1310,1390,40]])assert.ok(P(b,500).x-P(a,500).x>=((b-a)*1472/1536)+extra-.01);
+  for(const [a,b,extra]of [[280,350,40],[635,715,56],[940,1000,32]])assert.ok(P(500,b).y-P(500,a).y>=((b-a)*960/1024)+extra-.01);
+  const b=BUILDINGS.find(b=>b.id==='west-home');assert.ok(Math.abs(b.w*TILE-151*1472/1536)<.01,'House enlarged along with the road');
+});

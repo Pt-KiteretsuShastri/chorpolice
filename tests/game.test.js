@@ -14,6 +14,17 @@ function bank(g){position(g.chor,SAFE);g.action('interact');}
 test('movement collides with painted buildings and never exits the map',()=>{
   const g=fresh();position(g.chor,P(480,500));tick(g,1,{chor:{x:1}});assert.ok(g.chor.x<P(522,500).x);assert.ok(walkable(g.chor.x,g.chor.y));position(g.chor,P(490,1000));tick(g,6,{chor:{x:-1,sprint:true}});assert.ok(g.chor.x>=10);assert.ok(walkable(g.chor.x,g.chor.y));assert.equal(walkable(NaN,0),false);assert.equal(lineOfSight(P(480,500),P(700,500)),false);
 });
+test('held movement slides along slanted façades instead of sticking, at walking and sprint speeds',()=>{
+  for(const sprint of [false,true])for(const [x,y,dx,dy] of [[298,300,0,1],[1154,300,-1,0],[490,500,1,0],[503,519,1,0],[873,544,-1,0]]){
+    const g=fresh(),start=P(x,y);position(g.chor,start);for(let i=0;i<60;i++){g.move(g.chor,dx,dy,sprint,1/60,178);assert.ok(walkable(g.chor.x,g.chor.y),'Sliding entered a solid');}
+    assert.ok(distance(start,g.chor)>20,`Stuck at ${x},${y}`);
+  }
+});
+test('fast diagonal movement cannot tunnel through walls or leave the world',()=>{
+  const g=fresh();for(const [x,y,dx,dy]of [[490,500,1,1],[873,544,-1,-1],[288,1000,0,1]]){
+    position(g.chor,P(x,y));for(let i=0;i<100;i++){g.move(g.chor,dx,dy,true,.05,400);assert.ok(walkable(g.chor.x,g.chor.y),'Movement crossed a solid edge');}
+  }
+});
 test('collect, persuade, drop, collect again and bank all three treasures',()=>{
   const g=fresh();pick(g);const id=g.carried.id;assert.equal(g.carried.trust,1);g.carried.trust=.1;g.action('persuade');agree(g);assert.equal(g.carried.trust,1);g.action('drop');assert.equal(g.carried,null);assert.equal(g.loot.find(l=>l.id===id).state,'ground');g.action('interact');agree(g);bank(g);assert.equal(g.banked,1);pick(g,1);bank(g);pick(g,2);bank(g);assert.equal(g.phase,'ended');assert.equal(g.winner,'chor');assert.equal(g.banked,3);
 });
