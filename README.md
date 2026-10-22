@@ -1,162 +1,97 @@
-# Gully Chase · Bigger Gully, Louder Loot
+# Gully Chase
 
-A Canvas chor–police browser game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the loot home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
+A JavaScript and Canvas neighbourhood chase game. Play as the chor or cop, share a keyboard, or create a two-player online room.
 
-The page contains the game, a role-aware controls sidebar and a friend invitation. The sidebar stays beside the playfield on wide screens and moves underneath it on smaller screens. No marketing sections, accounts, paid APIs or remote art. PeerJS 1.5.5 is bundled locally for online connections; creating or joining a room uses its free cloud signaling and default ICE services.
+**[Play the demo](https://chorpolice-kappa.vercel.app)** · [Gameplay guide](docs/GAMEPLAY.md) · [Verification notes](docs/verification.md)
 
-**[Play the deployed game](https://chorpolice-kappa.vercel.app)**
+![Illustrated neighbourhood used by the game](dist/assets/neighbourhood.webp)
 
-## Deploy to Vercel
+*The game's bundled map artwork; this is not a gameplay screenshot.*
 
-Import **[Pt-KiteretsuShastri/chorpolice](https://github.com/Pt-KiteretsuShastri/chorpolice)** into Vercel. Keep the repository root as the Root Directory. The checked-in `vercel.json` serves the already-authored `dist` directory directly.
+## What you can play
 
-| Setting | Value |
-| --- | --- |
-| Framework Preset | Other (`framework: null`) |
-| Root Directory | `.` |
-| Install Command | Empty / skipped |
-| Build Command | Empty / skipped |
-| Output Directory | `dist` |
-| Environment variables | None |
+- **Solo:** play either role against the simulation.
+- **Local two-player:** share one keyboard.
+- **Online:** the host plays chor and sends a room link to the cop.
+- **Repeatable challenges:** a seed reproduces a round's layout.
+- **Hindi dialogue:** device speech and captions; local recorded clips are optional.
 
-Do not use `npm start` as a deployment build command; it starts a development server. A connected Vercel project can deploy pushes to `main`. Repository changes do not by themselves confirm a successful Vercel deployment.
+The chor negotiates with three treasures and brings them home within 120 seconds. The cop wins by tagging the chor three times or preventing all three deliveries. Rooftops, chai camouflage, patrols, stamina, and timed events change the chase.
 
 ## Run locally
 
+Requires Python 3. From the repository root:
+
 ```bash
-git clone https://github.com/Pt-KiteretsuShastri/chorpolice.git
-cd chorpolice
-npm start
+python -m http.server 8080 --directory dist
 ```
 
-Open http://localhost:8080. `npm start` uses Python 3 to serve `dist`; alternatively run `python3 -m http.server 8080 --directory dist`. Use HTTP rather than opening the HTML as a file, because the game uses ES modules. No installation or compilation is needed.
+Open `http://localhost:8080`. The `dist/` folder contains authored source files served directly; it is intentionally versioned. No build step, runtime API key, or dependency installation is needed for solo/local play.
 
-## Play
+## Engineering
 
-**Chor:** persuade and deliver three treasures, one at a time, to the green safehouse within 120 seconds. Press E beside a treasure, read its wish and choose the matching offer. A wrong offer makes noise; a good offer earns silence. Trust gradually falls while travelling, so renew your promise before the object starts complaining.
+| Decision | What it supports |
+| --- | --- |
+| Shared world geometry | Rendering, collisions, rooftops, and BFS navigation agree on the map |
+| Browser-independent engine | Game rules can be exercised without a browser |
+| Seeded randomness | Reproducible rounds and randomized layout checks |
+| Host-authoritative online simulation | Guest controls are validated; the host sends state snapshots |
+| Input expiry and heartbeat | Stale input stops and lost connections pause a round |
+| Local assets and speech fallbacks | Gameplay remains usable without a paid voice service |
 
-**Cop:** tag the chor three times, or keep at least one treasure unbanked until the timer ends. A tag returns carried loot to its original position; banked loot stays safe. Nets require clear sight and briefly stun a nearby chor.
+```mermaid
+flowchart LR
+  Input[Keyboard or touch] --> Engine[Game simulation]
+  Geometry[Shared world geometry] --> Engine
+  Geometry --> Render[Canvas renderer]
+  Engine --> Render
+  Guest[Guest controls] --> Host[Host validation]
+  Host --> Engine
+  Engine --> Snapshots[State snapshots]
+  Snapshots --> GuestView[Guest interpolation]
+```
 
-| Action | Solo chor / P1 | Solo cop | P2 cop |
-| --- | --- | --- | --- |
-| Move | WASD (or arrows in solo) | WASD or arrows | Arrows |
-| Sprint | Shift | Shift | `/` |
-| Talk, bank, sit / leave chai | E | — | — |
-| Choose an offer | 1, 2, 3 | — | — |
-| Renew a promise | F | — | — |
-| Drop loot on reachable ground | Q | — | — |
-| Climb / descend / leap rooftops | Space | — | — |
-| Throw net (5-second cooldown) | — | Space | Enter |
-| Overview | M | M | M |
-| Pause / resume | P or Escape | P or Escape | P or Escape |
+Online rooms use the bundled PeerJS client, cloud signaling, and WebRTC. The host tab must stay open. This is a trust-based two-player game; restrictive networks or signaling service availability may prevent a connection.
 
-- **Rooftops:** amber ladder markers let the chor climb up or down. Face an adjacent roof and jump from its edge to cross a gap. Each jump costs 18 energy. Movement stays within a roof's footprint, and ground patrols and nets cannot catch a rooftop chor. Banking happens on the street.
-- **Tea camouflage:** press E beside either chair at Chai & Gossip. While seated the chor is invisible and untouchable, even to patrol cars. Energy recovers and carried loot stays quiet, but the round timer continues. E leaves the seat.
-- **Energy:** sprinting costs energy; walking or resting restores it. Chai cups refill energy and return after 16 seconds. Both roles can drink them.
-- **Patrols:** two animated police cars follow connected street circuits from the chowki. Sustained sightings radio the chor's location to the cop. A nearby alerted car can tag, with a visible warning before it does. Break sight, use rooftops or sit for chai.
-- **Two players:** local play on one keyboard. The shared camera keeps both players visible. Solo touch controls are available on small screens and touch devices. Choose **Online** to play from two separate browsers through a room link.
+## Check the code
 
-## Online play by link
-
-1. Open the deployed HTTPS site and choose **Online**, then **Create online room**. The host plays chor.
-2. Copy the **join link** and send it to one friend. Keep the host tab open.
-3. Your friend opens the link, clicks **Join as cop**, then **Ready as cop**.
-4. The host clicks **Start round**. Each player uses WASD or arrows, Shift and their role's controls. Touch works for either online role.
-5. Either player can pause. The host resumes after both are ready. Rematch/replay prepares a shared lobby, and the guest readies up again.
-
-Only two players are admitted. Disconnects pause the round; the guest can reconnect using the same link while the host remains open. Closing the host ends the room. Room links are ephemeral and have random 96-bit IDs; they are not accounts or persistent saved games. Play with someone you trust: the host owns the simulation, and this is not an anti-cheat service.
-
-The host validates guest inputs, runs physics, collisions, loot, clocks and events, and sends snapshots at up to 20 Hz. The guest sends controls at up to 30 Hz and interpolates actor positions between snapshots. Freshness checks ignore stale inputs, action replays and old-round packets. Held controls expire after 300 ms without updates; heartbeat loss pauses the game after eight seconds. Each online player has a camera for their role. Tea-hidden chor sprites, carried-loot bubbles and home-route hints are hidden from the cop's view.
-
-Online mode requires internet and a browser with WebRTC. No Vercel backend, environment variables, paid keys or media permissions are needed. Free signaling/ICE service availability and restrictive networks can prevent connections; the lobby reports failures and lets the guest retry. Solo and same-keyboard modes remain available. PeerJS primary documentation: https://peerjs.com/client/faq and https://peerjs.com/client/api/peer . See [third-party notices](THIRD_PARTY_NOTICES.md) for the bundled client's license.
-
-## The neighbourhood
-
-The world is **52 × 34 tiles at 32 px**: 1664 × 1088. The main vertical corridors gain 40–80 px of extra width and the cross streets gain 32–56 px, while character sizes stay fixed. The background and collision polygons use the same piecewise coordinate transform, including split polygon edges at every image seam. This allocates space to the streets instead of uniformly enlarging all the houses. Movement sweeps in short steps and slides along sloping walls, avoiding axis-order sticking and tunnelling. The bazaar, residential gullies, park courtyard, chai corner, police chowki, rooftop terraces and green safehouse connect through street loops, narrow side lanes and open chase areas.
-
-`world.js` is the geometry source for drawing, ground collision, roof boundaries, loot validation and BFS navigation. Building façades, courtyard walls, the banyan, fruit cart and parked scooters share authored collision polygons; navigation is sampled from those same footprints. Roof decorations are decorative. Every spawn candidate, tea seat and rooftop access point is validated as reachable from home. The painted level uses a finer 8 px navigation graph for curved lanes and courtyard gates while keeping the 32 px world tiles.
-
-The supplied detailed neighbourhood image is now the actual level background, bundled locally as [`dist/assets/neighbourhood.webp`](dist/assets/neighbourhood.webp). The cleanup prompt and coordinate mapping are in [map asset notes](docs/map-asset.md). It is cleaned of baked-in players, loot, route arrows and parked patrol vehicles so animated game objects remain truthful. The bazaar, park, chai stall, chowki and safehouse keep their illustrated positions. Authored polygon footprints follow the visible façades, walls and parked scooters; traversable rooftop terraces and access markers are defined separately.
-
-Steam, shop bulbs, laundry, falling leaves, birds, walkers and police cars animate over the painted scene. A local geometry-based fallback appears while the image decodes or if it cannot load. Reduced-motion preference freezes decorative animation and disables camera easing; movement needed to play remains visible.
-
-Solo uses a clamped follow camera. Local two-player shares a camera that fits both actors. A screen-anchored minimap, overview toggle, numbered objectives and dotted route home support navigation. The whole map renders before Start.
-
-Rooftop access has a 96 px approach radius and checks clear sight to an amber ladder. You do not need to stand exactly on the marker. The nearby roof is outlined and a Space prompt appears; the touch button and sidebar show the same action. Once on a roof, Space can always return to the street. Away from the landing marker, face a nearby roof to leap instead. All prompts and jump input use one shared target resolver.
-
-## Randomness and rematches
-
-- Twenty validated candidate locations are spread across five loot districts. Each round chooses three different districts, three distinct locations and three different loot personalities.
-- Candidates need player clearance, a route home, distance from the safehouse and cop spawn, and at least 100 px separation from the other treasures. The sum of three round trips has a maximum BFS path budget of 10,500 px.
-- A deterministic seeded shuffle chooses loot, locations, morning/evening light and two distinct event types/times. `?seed=2401` reproduces that round. Given the same inputs, simulation and event placement are reproducible too.
-- Rematch makes a new seed and avoids the preceding arrangement. **Replay this seed** intentionally recreates it. If an alternative needs a retry, the game exposes the resulting effective seed so the invitation still reproduces it exactly.
-- **Invite a friend** can create an online room. Within a room it copies the live join URL. Outside a room, the separate challenge link reproduces a seed for independent solo runs. No invitation is sent automatically.
-
-| Personality | Difference | What earns silence |
-| --- | --- | --- |
-| Chef Seeti | Loud pressure-cooker whistles; slight weight | A peaceful picnic |
-| Sir Jeet-a-Lot | Heaviest item, modest speed penalty | An admiring audience |
-| Samosa Singh | Light, with chutney complaints | Extra chutney |
-| Bol Bachchan Radio | Far-reaching chatter; slight weight | An exclusive radio show |
-| Chappal Express | Light; four-second speed perk on pickup | A first-class ride |
-
-Two non-overlapping, twelve-second events are drawn from **Chai Happy Hour** (three extra energy cups), **Chutney Sprint** (marked speed pickups) and **Wrong Number!** (a false radio location for police to investigate). A banner announces each four seconds beforehand and counts down its duration. Sight can override a decoy, so the chor must still break line of sight. Quiet and clean escapes earn result-screen recognition without changing the three-delivery win condition.
-
-## Voices and accessibility
-
-Start is the user interaction that enables optional browser speech and synthesized sound effects. **Hindi** and **SFX** have separate toggles. Every character reaction has a Devanagari Hindi translation, sent to an installed `hi-IN` (or other Hindi) voice. English/Hinglish captions stay readable independently and remain on when muted. Delayed voice lists are handled; while they load, the browser is asked for Hindi. If the installed list has no Hindi voice, the button explains this and captions remain available instead of using an English voice. Actual Hindi voice availability and pronunciation depend on the browser/device. No microphone permission or API key is requested.
-
-Dialogue has per-character cooldowns, recent-line avoidance and priority. The audio controller cancels stale utterances instead of building a queue. Pause, restart, role changes and quit stop speech. Switching tabs or losing window focus automatically pauses. Controls have visible focus states; help and invitations use native dialogs. Fullscreen is offered where supported.
-
-Only voice/SFX preferences are stored locally. No analytics, accounts, camera, microphone or location are used. Solo/local modes make no gameplay network requests. Online mode uses PeerJS Cloud to find the two peers, then WebRTC data channels carry state and controls directly or through the default TURN relay. The signaling/ICE services and the other peer can see connection metadata such as IP addresses.
-
-## ElevenLabs Hindi audio
-
-An offline ElevenLabs generator can now generate all **77 character dialogue clips** from the game's Hindi script. Choose a distinct voice for each character, or start with just the chor. The generator previews character counts without making an API call, saves completed audio incrementally and skips existing files when rerun. The checked-in audio manifest is currently empty: real ElevenLabs audio has **not been generated**, and no paid call has been made.
-
-See [voice casting and activation](audio/README.md). The manual **Generate Hindi voices** GitHub Actions workflow reads a private `ELEVENLABS_API_KEY` repository secret, generates the chosen character using your voice ID, and commits local MP3s. A push then uses the existing Vercel deployment. The browser loads only a local voice manifest and local MP3s. It chooses the correct character/line, supports partial packs, preserves dialogue priority and cancels stale playback on pause, mute, restart or quit. A missing, blocked or failed clip falls back to device Hindi speech, then captions. Nothing calls ElevenLabs while a player is chasing; no key goes in `dist` or Vercel's client bundle.
-
-Character banter and loot persuasion are the first recommended use. Cooker whistles, radio tuning, victory stings and gentle bazaar ambience are possible future sound-effect additions; they are not generated in this release. Official references: [speech API](https://elevenlabs.io/docs/api-reference/text-to-speech/convert), [models](https://elevenlabs.io/docs/overview/models), [sound effects](https://elevenlabs.io/docs/overview/capabilities/sound-effects).
-
-## Verify
-
-Requires Node.js 18 or later. No npm installation is required.
+Requires Node.js 22 for the proposed CI environment:
 
 ```bash
 npm run check
 npm test
 ```
 
-For the optional DOM flow harness (Node.js 20+ recommended):
+For the optional DOM flow harness:
 
 ```bash
 npm ci
 npm run test:dom
 ```
 
-LinkeDOM is a development-only dependency. It is not needed to serve or deploy `dist`. The DOM harness drives the actual page modules through a two-player lobby, join link, readiness, guest controls, pause/resume, rematch, disconnect/rejoin and return to solo using test data channels. It also drives the actual Space key handler to climb and the touch button to descend, checking their prompts, then tests the voice pack through Start, pause, mute/captions, resume and quit using mock media. It does not emulate browser layout or native WebRTC.
+The harness exercises application modules with test data channels and mock media. It does not emulate native WebRTC, browser layout, touch hardware, or device speech. See [verification notes](docs/verification.md) for the existing test scope and limitations.
 
-The **66 automated tests** cover all marked landmarks and courtyard gates, solid footprints, contiguous car routes, seeded replay and alternative layouts, 200 randomized round layouts, district/personality uniqueness, travel bounds, collision movement, persuasion and refusal, trust/noise, dropping/banking/winning, tags, nets, stamina, pause, timeout, walking approaches to all ten rooftops, generous climb range, safe descent from roof corners, rooftop transitions, tea protection, patrol detection, cop states, all events and cleanup, separate two-player inputs, ElevenLabs script coverage, incremental generation/cache/failed-response handling, local clip selection, priority, cancellation, failed-media and native-speech fallbacks, Hindi translation coverage, Hindi-only voice selection, speech fallback/voice loading/priority/cancellation, camera visibility, initial rendering and local references/configuration. Online tests cover room IDs, handshake, admission, disconnect/rejoin, timeouts, version mismatch, heartbeat, input expiry, snapshots, interpolation and a complete round over paired test channels.
+## Project layout
 
-Complete AI chor victories are simulated over four seeds at each difficulty with patrol traffic enabled. Cop victories are simulated against an idle chor. Canvas rendering was also checked with a raster Canvas implementation at full-map, desktop and 360 px phone widths.
-
-**Verification limit:** a live native-WebRTC smoke check registered peers and exchanged offers/answers through PeerJS Cloud, but the data channel timed out in the build environment. Real cross-device/network play remains unverified. Interactive browser control was unavailable. Live device speech output, actual touch events, fullscreen, browser layout and human-paced end-to-end play were not browser-tested. The simulation, input mappings, fallback paths and Canvas renders were checked; try the deployed game on the hackathon laptop and phone before presenting.
-
-Detailed results and remaining device checks: [verification notes](docs/verification.md).
-
-## Source layout
-
-| File | Responsibility |
+| Path | Responsibility |
 | --- | --- |
-| `dist/index.html`, `dist/style.css` | Focused game interface, instructions, invitation, responsive controls |
-| `dist/world.js` | Shared geometry, collision, roofs, BFS paths and patrol circuits |
-| `dist/random.js`, `dist/dialogue.js` | Seeded randomness and personalities/lines |
-| `dist/engine.js` | Browser-independent game rules, AI, events and state |
-| `dist/world-art.js`, `dist/renderer.js` | Local Canvas artwork and animated rendering |
-| `dist/camera.js` | Clamped solo/shared/overview camera |
-| `dist/audio.js`, `dist/character-voice.js` | Hindi device speech, local character clips and sound effects |
-| `scripts/elevenlabs.mjs`, `audio/` | Offline ElevenLabs generation and character casting |
-| `dist/net-state.js`, `dist/online-room.js` | Authoritative snapshots, control validation, rooms, heartbeat and reconnect |
-| `dist/input.js`, `dist/app.js` | Input mapping and browser interface wiring |
-| `tests/*.test.js` | Simulation, world, audio, camera and renderer checks |
-| `vercel.json` | Static `dist` deployment configuration |
+| `dist/engine.js` | Rules, AI, collisions, and round state |
+| `dist/world.js` | Geometry, navigation, and patrol routes |
+| `dist/renderer.js`, `dist/world-art.js` | Canvas presentation |
+| `dist/net-state.js`, `dist/online-room.js` | Networking, snapshots, and reconnects |
+| `dist/app.js`, `dist/input.js` | Interface and controls |
+| `tests/` | Simulation, network, audio, and presentation checks |
+| `scripts/elevenlabs.mjs` | Optional offline voice generation |
+| `vercel.json` | Static deployment configuration |
+
+## Privacy and external services
+
+Solo and local play use no gameplay service. Online mode exposes connection metadata to signaling/ICE services and the other peer. Voice generation is an optional maintainer task that can incur API charges; it is never needed to play. The checked-in voice manifest is empty.
+
+## Status, deployment, and reuse
+
+The repository includes a configured Vercel demo URL. Live availability and cross-device online play need a fresh manual check. Import the root into Vercel with **Other** as the framework and `dist` as the output directory; leave the build command empty.
+
+No top-level project license was found. [Third-party notices](THIRD_PARTY_NOTICES.md) cover bundled dependencies; they do not license the entire game. A project license requires the owner's choice.
+
+[Full mechanics, deployment details, and original verification narrative](docs/GAMEPLAY.md)
