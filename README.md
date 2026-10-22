@@ -1,6 +1,6 @@
 # Gully Chase · Bigger Gully, Louder Loot
 
-A Canvas chor–police browser game for **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the loot home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
+A Canvas chor–police browser game I made for MLH teens delhi hacktober fest, where the theme was **“Using technology to find joy.”** Convince three opinionated treasures to come along, escape through a lively neighbourhood, and bring the loot home. Solo chor, solo cop, same-keyboard two-player and online two-player rooms are included.
 
 The page contains the game, a role-aware controls sidebar and a friend invitation. The sidebar stays beside the playfield on wide screens and moves underneath it on smaller screens. No marketing sections, accounts, paid APIs or remote art. PeerJS 1.5.5 is bundled locally for online connections; creating or joining a room uses its free cloud signaling and default ICE services.
 
